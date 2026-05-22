@@ -57,7 +57,10 @@ interface ChatMessage {
 export default function AnalyticsDashboard() {
   // New UX States
   const [showPassword, setShowPassword] = useState(false);
-  const [apiBaseUrl, setApiBaseUrl] = useState<string>("http://127.0.0.1:8000/api");
+  const defaultApiBase = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' 
+    ? '/_/backend/api' 
+    : 'http://127.0.0.1:8000/api';
+  const [apiBaseUrl, setApiBaseUrl] = useState<string>(defaultApiBase);
   const API_BASE = apiBaseUrl;
 
   // Auth State
