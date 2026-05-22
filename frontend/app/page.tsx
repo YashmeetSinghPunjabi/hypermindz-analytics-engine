@@ -74,6 +74,8 @@ export default function AnalyticsDashboard() {
 
   // App Layout State
   const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'settings' | 'playground'>('dashboard');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
+  const [isCompact, setIsCompact] = useState(false);
 
   // CSV Data State
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -122,6 +124,18 @@ export default function AnalyticsDashboard() {
     if (savedApiBase) {
       setApiBaseUrl(savedApiBase);
     }
+    
+    const savedTheme = localStorage.getItem("hm_theme") as any;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    }
+    
+    const savedCompact = localStorage.getItem("hm_compact");
+    if (savedCompact === 'true') {
+      setIsCompact(true);
+    }
   }, []);
 
   // Fetch files and history once authenticated
@@ -149,11 +163,30 @@ export default function AnalyticsDashboard() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatThreads, activeFile]);
 
+  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+    setTheme(newTheme);
+    localStorage.setItem("hm_theme", newTheme);
+    if (newTheme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  };
+
+  const handleCompactToggle = () => {
+    const newVal = !isCompact;
+    setIsCompact(newVal);
+    localStorage.setItem("hm_compact", String(newVal));
+  };
+
   // --- Auth Handlers ---
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authEmail || !authPassword) return;
+
+    if (!authEmail.includes("@")) {
+      setAuthError("Username must be a valid email address.");
+      return;
+    }
+
     setAuthError(null);
     setAuthLoading(true);
 
@@ -835,7 +868,7 @@ export default function AnalyticsDashboard() {
         
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <div className="p-8 max-w-5xl space-y-6 flex-1">
+          <div className={`${isCompact ? 'p-4' : 'p-8'} max-w-5xl space-y-6 flex-1`}>
             <h1 className="text-2xl font-black text-slate-800">Workspace Dashboard</h1>
             <p className="text-sm text-slate-500 font-medium">Welcome back! Here is an overview of your data sandboxes.</p>
             
@@ -1416,7 +1449,7 @@ export default function AnalyticsDashboard() {
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (
-          <div className="p-8 max-w-2xl space-y-6 flex-1">
+          <div className={`${isCompact ? 'p-4' : 'p-8'} max-w-2xl space-y-6 flex-1`}>
             <h1 className="text-2xl font-black text-slate-800 mb-6">User Settings</h1>
 
             {/* UI Customization */}
@@ -1429,8 +1462,12 @@ export default function AnalyticsDashboard() {
                   <h4 className="text-xs font-bold text-slate-700">Application Theme</h4>
                   <p className="text-[10px] text-slate-400 font-medium">Switch between light and dark modes.</p>
                 </div>
-                <select className="bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500">
-                  <option value="light">Light Mode (Active)</option>
+                <select 
+                  value={theme}
+                  onChange={(e) => handleThemeChange(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="light">Light Mode</option>
                   <option value="dark">Dark Mode</option>
                   <option value="system">System Default</option>
                 </select>
@@ -1440,8 +1477,11 @@ export default function AnalyticsDashboard() {
                   <h4 className="text-xs font-bold text-slate-700">Compact Layout</h4>
                   <p className="text-[10px] text-slate-400 font-medium">Reduce whitespace and padding for higher density.</p>
                 </div>
-                <div className="w-10 h-5 bg-slate-200 rounded-full flex items-center px-1 cursor-pointer">
-                  <div className="w-3.5 h-3.5 bg-white rounded-full shadow-sm"></div>
+                <div 
+                  onClick={handleCompactToggle}
+                  className={`w-10 h-5 rounded-full flex items-center px-1 cursor-pointer transition-colors ${isCompact ? 'bg-indigo-500' : 'bg-slate-200'}`}
+                >
+                  <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm transition-transform ${isCompact ? 'translate-x-4.5' : 'translate-x-0'}`}></div>
                 </div>
               </div>
             </div>
