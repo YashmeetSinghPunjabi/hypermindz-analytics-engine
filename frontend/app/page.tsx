@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Upload, Play, Database, Table, BarChart3, AlertCircle, 
-  FileSpreadsheet, Trash2, Eye, Settings, LogOut, User, 
-  History, Sparkles, MessageSquare, ChevronRight, RefreshCw, 
+import {
+  Upload, Play, Database, Table, BarChart3, AlertCircle,
+  FileSpreadsheet, Trash2, Eye, Settings, LogOut, User,
+  History, Sparkles, MessageSquare, ChevronRight, RefreshCw,
   Plus, Check, HelpCircle, LineChart, PieChart, AreaChart, BarChart,
   Mail, Lock, EyeOff, Globe, ChevronDown, ChevronUp, Zap
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, BarChart as RechartsBarChart, Bar, 
-  LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, 
-  Pie, Cell, XAxis, YAxis, Tooltip, Legend, AreaChart as RechartsAreaChart, 
+import {
+  ResponsiveContainer, BarChart as RechartsBarChart, Bar,
+  LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart,
+  Pie, Cell, XAxis, YAxis, Tooltip, Legend, AreaChart as RechartsAreaChart,
   Area, ScatterChart as RechartsScatterChart, Scatter
 } from 'recharts';
 
@@ -83,7 +83,7 @@ export default function AnalyticsDashboard() {
   const [previewFileItem, setPreviewFileItem] = useState<FileItem | null>(null);
   const [previewRows, setPreviewRows] = useState<any[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
-  
+
   // Profiling State
   const [profilingFileItem, setProfilingFileItem] = useState<FileItem | null>(null);
   const [columnProfiles, setColumnProfiles] = useState<ColumnProfile[]>([]);
@@ -102,7 +102,7 @@ export default function AnalyticsDashboard() {
   const [queryHistory, setQueryHistory] = useState<any[]>([]);
   const [groqApiKey, setGroqApiKey] = useState("");
 
-  const [dynamicSuggestions, setDynamicSuggestions] = useState<{text: string; category: string}[]>([]);
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<{ text: string; category: string }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load Auth Token from localStorage on startup
@@ -124,14 +124,14 @@ export default function AnalyticsDashboard() {
     if (savedApiBase) {
       setApiBaseUrl(savedApiBase);
     }
-    
+
     const savedTheme = localStorage.getItem("hm_theme") as any;
     if (savedTheme) {
       setTheme(savedTheme);
       if (savedTheme === 'dark') document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
     }
-    
+
     const savedCompact = localStorage.getItem("hm_compact");
     if (savedCompact === 'true') {
       setIsCompact(true);
@@ -152,9 +152,9 @@ export default function AnalyticsDashboard() {
       fetch(`${API_BASE}/files/${activeFile.id}/suggestions`, {
         headers: { "Authorization": `Bearer ${token}` }
       })
-      .then(res => res.ok ? res.json() : { suggestions: [] })
-      .then(data => setDynamicSuggestions(data.suggestions))
-      .catch(() => setDynamicSuggestions([]));
+        .then(res => res.ok ? res.json() : { suggestions: [] })
+        .then(data => setDynamicSuggestions(data.suggestions))
+        .catch(() => setDynamicSuggestions([]));
     }
   }, [activeFile, token, API_BASE]);
 
@@ -208,7 +208,7 @@ export default function AnalyticsDashboard() {
       localStorage.setItem("hm_token", result.access_token);
       localStorage.setItem("hm_email", result.email);
       localStorage.setItem("hm_userid", result.user_id);
-      
+
       setToken(result.access_token);
       setEmail(result.email);
       setUserId(result.user_id);
@@ -271,7 +271,7 @@ export default function AnalyticsDashboard() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0 || !token) return;
     const selectedFile = e.target.files[0];
-    
+
     setIsUploading(true);
     setUploadError(null);
 
@@ -292,7 +292,7 @@ export default function AnalyticsDashboard() {
 
       const result = await response.json();
       await fetchFilesList();
-      
+
       // Auto switch to dashboard and set active
       const newFileItem: FileItem = {
         id: result.file_id,
@@ -320,7 +320,7 @@ export default function AnalyticsDashboard() {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
         setFiles(files.filter(f => f.id !== fileId));
         if (activeFile?.id === fileId) {
@@ -343,7 +343,7 @@ export default function AnalyticsDashboard() {
     setPreviewFileItem(fileItem);
     setPreviewRows([]);
     setPreviewLoading(true);
-    
+
     try {
       const response = await fetch(`${API_BASE}/files/${fileItem.id}/preview`, {
         headers: { "Authorization": `Bearer ${token}` }
@@ -363,7 +363,7 @@ export default function AnalyticsDashboard() {
     setProfilingFileItem(fileItem);
     setColumnProfiles([]);
     setProfilingLoading(true);
-    
+
     try {
       const response = await fetch(`${API_BASE}/files/${fileItem.id}/profile`, {
         headers: { "Authorization": `Bearer ${token}` }
@@ -409,10 +409,10 @@ export default function AnalyticsDashboard() {
 
   const handleSendQuery = async (queryText: string) => {
     if (!queryText.trim() || !activeFile || !token) return;
-    
+
     const currentFileId = activeFile.id;
     const userQuery = queryText;
-    
+
     // Optimistically update chat threads UI
     const newUserMessage: ChatMessage = { role: 'user', content: userQuery };
     const currentThread = chatThreads[currentFileId] || [];
@@ -420,7 +420,7 @@ export default function AnalyticsDashboard() {
       ...chatThreads,
       [currentFileId]: [...currentThread, newUserMessage]
     });
-    
+
     setNlQuery("");
     setIsQuerying(true);
     setQueryError(null);
@@ -449,21 +449,21 @@ export default function AnalyticsDashboard() {
       if (!response.ok) {
         const errorData = await response.json();
         const errorMsg = errorData.detail || "Tabular query compiler encountered an execution fault.";
-        
+
         setChatThreads({
           ...chatThreads,
-          [currentFileId]: [...updatedThread, { 
-            role: 'model', 
-            content: `Error: ${errorMsg}`, 
+          [currentFileId]: [...updatedThread, {
+            role: 'model',
+            content: `Error: ${errorMsg}`,
             explanation: errorMsg,
-            isError: true 
+            isError: true
           }]
         });
         throw new Error(errorMsg);
       }
 
       const result = await response.json();
-      
+
       const newModelMessage: ChatMessage = {
         role: 'model',
         content: result.explanation,
@@ -514,7 +514,7 @@ export default function AnalyticsDashboard() {
 
     const recommendedType = msg.visualization_config.type;
     const activeChartType = selectedChartOverride[msgIndex] || recommendedType;
-    
+
     const xKey = msg.visualization_config.x_axis_key || "";
     const yKey = msg.visualization_config.y_axis_key || "";
 
@@ -543,18 +543,17 @@ export default function AnalyticsDashboard() {
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <BarChart3 className="h-3.5 w-3.5 text-indigo-600" /> Visualization
           </span>
-          
+
           {/* Manual Chart Switcher Override */}
           <div className="flex bg-slate-50 p-0.5 rounded-lg border border-slate-100">
             {['bar', 'line', 'area', 'pie'].map((type) => (
               <button
                 key={type}
                 onClick={() => setSelectedChartOverride({ ...selectedChartOverride, [msgIndex]: type })}
-                className={`text-[10px] font-semibold px-2 py-1 rounded-md capitalize transition-all ${
-                  activeChartType === type 
-                    ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' 
+                className={`text-[10px] font-semibold px-2 py-1 rounded-md capitalize transition-all ${activeChartType === type
+                    ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 {type}
               </button>
@@ -590,8 +589,8 @@ export default function AnalyticsDashboard() {
               <RechartsAreaChart data={formattedData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey={actualXKey} stroke="#94a3b8" tickLine={false} />
@@ -634,13 +633,13 @@ export default function AnalyticsDashboard() {
         {/* Decorative background blur shapes */}
         <div className="absolute top-1/4 left-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-indigo-500/10 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-1/4 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-purple-500/10 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none"></div>
-        
+
         {/* Inner layout container for better sizing */}
         <div className="w-full max-w-xl my-8 space-y-6 relative z-10 flex flex-col items-center">
-          
+
           {/* Main Auth Card Container */}
           <div className="w-full bg-slate-900/70 backdrop-blur-2xl border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6">
-            
+
             {/* Header Section */}
             <div className="text-center space-y-3">
               <div className="inline-flex bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-3 rounded-2xl border border-indigo-400/20 shadow-lg shadow-indigo-500/15">
@@ -658,10 +657,9 @@ export default function AnalyticsDashboard() {
 
             {/* Sliding Toggle between Sign In and Create Account */}
             <div className="relative grid grid-cols-2 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80">
-              <div 
-                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-slate-800 rounded-lg shadow-md transition-all duration-300 ease-out ${
-                  isRegisterMode ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'
-                }`}
+              <div
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-slate-800 rounded-lg shadow-md transition-all duration-300 ease-out ${isRegisterMode ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'
+                  }`}
               />
               <button
                 type="button"
@@ -669,9 +667,8 @@ export default function AnalyticsDashboard() {
                   setIsRegisterMode(false);
                   setAuthError(null);
                 }}
-                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${
-                  !isRegisterMode ? "text-white" : "text-slate-400 hover:text-slate-200"
-                }`}
+                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${!isRegisterMode ? "text-white" : "text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 Sign In
               </button>
@@ -681,9 +678,8 @@ export default function AnalyticsDashboard() {
                   setIsRegisterMode(true);
                   setAuthError(null);
                 }}
-                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${
-                  isRegisterMode ? "text-white" : "text-slate-400 hover:text-slate-200"
-                }`}
+                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${isRegisterMode ? "text-white" : "text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 Create Account
               </button>
@@ -692,7 +688,7 @@ export default function AnalyticsDashboard() {
             {/* Context Explainer Header */}
             <div className="text-center px-2">
               <p className="text-xs text-slate-400 font-medium">
-                {!isRegisterMode 
+                {!isRegisterMode
                   ? "Enter your credentials to access your isolated data sandbox."
                   : "Register a secure account to load datasets and get SQL insights."
                 }
@@ -798,11 +794,10 @@ export default function AnalyticsDashboard() {
         <nav className="flex-1 px-4 py-6 space-y-1.5">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${
-              activeTab === 'dashboard'
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${activeTab === 'dashboard'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                 : 'hover:bg-slate-800 hover:text-white'
-            }`}
+              }`}
           >
             <BarChart3 className="h-4 w-4" />
             <span>Dashboard</span>
@@ -810,11 +805,10 @@ export default function AnalyticsDashboard() {
 
           <button
             onClick={() => setActiveTab('playground')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${
-              activeTab === 'playground'
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${activeTab === 'playground'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                 : 'hover:bg-slate-800 hover:text-white'
-            }`}
+              }`}
           >
             <MessageSquare className="h-4 w-4" />
             <span>Playground</span>
@@ -822,11 +816,10 @@ export default function AnalyticsDashboard() {
 
           <button
             onClick={() => setActiveTab('catalog')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${
-              activeTab === 'catalog'
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${activeTab === 'catalog'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                 : 'hover:bg-slate-800 hover:text-white'
-            }`}
+              }`}
           >
             <FileSpreadsheet className="h-4 w-4" />
             <span>Data Catalog</span>
@@ -834,11 +827,10 @@ export default function AnalyticsDashboard() {
 
           <button
             onClick={() => setActiveTab('settings')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${
-              activeTab === 'settings'
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${activeTab === 'settings'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                 : 'hover:bg-slate-800 hover:text-white'
-            }`}
+              }`}
           >
             <Settings className="h-4 w-4" />
             <span>Settings</span>
@@ -853,7 +845,7 @@ export default function AnalyticsDashboard() {
             </div>
             <span className="font-semibold text-slate-400 truncate max-w-[120px]">{email}</span>
           </div>
-          <button 
+          <button
             onClick={handleSignOut}
             className="p-2 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg text-slate-500 transition-colors"
             title="Log Out"
@@ -865,13 +857,13 @@ export default function AnalyticsDashboard() {
 
       {/* Main Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
+
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className={`${isCompact ? 'p-4' : 'p-8'} max-w-5xl space-y-6 flex-1`}>
             <h1 className="text-2xl font-black text-slate-800">Workspace Dashboard</h1>
             <p className="text-sm text-slate-500 font-medium">Welcome back! Here is an overview of your data sandboxes.</p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Datasets</span>
@@ -886,7 +878,7 @@ export default function AnalyticsDashboard() {
                 <span className="text-4xl font-black text-amber-500">{queryHistory.length}</span>
               </div>
             </div>
-            
+
             <div className="mt-8 bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
               <h2 className="text-sm font-bold text-indigo-800 mb-2 flex items-center gap-2"><Sparkles className="h-4 w-4" /> Quick Actions</h2>
               <div className="flex space-x-4 mt-4">
@@ -902,7 +894,7 @@ export default function AnalyticsDashboard() {
           <div className="flex-1 flex min-h-0 bg-slate-50">
             {/* Chat Conversation Thread Section */}
             <div className="flex-1 flex flex-col border-r border-slate-200 max-h-screen">
-              
+
               {/* Playground Header */}
               <header className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shadow-sm">
                 <div className="flex items-center space-x-3">
@@ -941,8 +933,8 @@ export default function AnalyticsDashboard() {
                       <h3 className="font-bold text-slate-700">Analytics Sandbox Ready</h3>
                       <p className="text-xs text-slate-400 max-w-sm mt-1">Please select or upload a CSV dataset from the Data Catalog tab to begin exploring.</p>
                     </div>
-                    <button 
-                      onClick={() => setActiveTab('catalog')} 
+                    <button
+                      onClick={() => setActiveTab('catalog')}
                       className="bg-indigo-600 text-white font-bold text-xs px-4 py-2 rounded-xl hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/10"
                     >
                       Open Data Catalog
@@ -962,7 +954,7 @@ export default function AnalyticsDashboard() {
                   (chatThreads[activeFile.id] || []).map((msg, index) => (
                     <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-3xl space-y-2 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md' : ''}`}>
-                        
+
                         {/* User Chat Bubble */}
                         {msg.role === 'user' && (
                           <p className="text-xs font-semibold leading-relaxed">{msg.content}</p>
@@ -971,7 +963,7 @@ export default function AnalyticsDashboard() {
                         {/* Model Insight Box */}
                         {msg.role === 'model' && (
                           <div className={`bg-white border rounded-2xl p-5 shadow-sm space-y-4 text-slate-800 ${msg.isError ? 'border-rose-200 bg-rose-50/50' : 'border-slate-200'}`}>
-                            
+
                             {/* Attributed Source File */}
                             {msg.source_file && (
                               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 border-b border-slate-100 pb-1.5">
@@ -1033,10 +1025,10 @@ export default function AnalyticsDashboard() {
                                         <tr key={rIdx} className="hover:bg-slate-50/50 transition-colors">
                                           {Object.values(row).map((val: any, cIdx) => (
                                             <td key={cIdx} className="px-3 py-2 font-medium">
-                                              {val === null || val === undefined 
-                                                ? <span className="text-slate-300">null</span> 
-                                                : typeof val === 'number' 
-                                                  ? val.toLocaleString() 
+                                              {val === null || val === undefined
+                                                ? <span className="text-slate-300">null</span>
+                                                : typeof val === 'number'
+                                                  ? val.toLocaleString()
                                                   : String(val)
                                               }
                                             </td>
@@ -1061,7 +1053,7 @@ export default function AnalyticsDashboard() {
                     </div>
                   ))
                 )}
-                
+
                 {/* Query loading skeleton */}
                 {isQuerying && (
                   <div className="flex justify-start">
@@ -1101,11 +1093,11 @@ export default function AnalyticsDashboard() {
                     </div>
                   </div>
 
-                  <form 
+                  <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleSendQuery(nlQuery);
-                    }} 
+                    }}
                     className="flex gap-3"
                   >
                     <input
@@ -1151,10 +1143,10 @@ export default function AnalyticsDashboard() {
                             [activeFile.id]: [
                               ...currentThread,
                               { role: 'user', content: hist.question },
-                              { 
-                                role: 'model', 
-                                content: hist.explanation, 
-                                sql_query: hist.sql_query, 
+                              {
+                                role: 'model',
+                                content: hist.explanation,
+                                sql_query: hist.sql_query,
                                 explanation: hist.explanation,
                                 data: [], // we skip data records reload for memory footprint
                                 visualization_config: hist.visualization_config,
@@ -1172,10 +1164,10 @@ export default function AnalyticsDashboard() {
                               [hist.file_id]: [
                                 ...(chatThreads[hist.file_id] || []),
                                 { role: 'user', content: hist.question },
-                                { 
-                                  role: 'model', 
-                                  content: hist.explanation, 
-                                  sql_query: hist.sql_query, 
+                                {
+                                  role: 'model',
+                                  content: hist.explanation,
+                                  sql_query: hist.sql_query,
                                   explanation: hist.explanation,
                                   data: [],
                                   visualization_config: hist.visualization_config,
@@ -1206,7 +1198,7 @@ export default function AnalyticsDashboard() {
         {/* Data Catalog Tab */}
         {activeTab === 'catalog' && (
           <div className="p-8 space-y-8 flex-1">
-            
+
             {/* File Dropzone Card */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
@@ -1264,8 +1256,8 @@ export default function AnalyticsDashboard() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
                       {files.map((file) => (
-                        <tr 
-                          key={file.id} 
+                        <tr
+                          key={file.id}
                           onClick={() => {
                             setActiveFile(file);
                             setActiveTab('dashboard');
@@ -1332,8 +1324,8 @@ export default function AnalyticsDashboard() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
                     <Eye className="h-4.5 w-4.5 text-indigo-500" /> Data Preview: {previewFileItem.file_name} (First 20 rows)
                   </h3>
-                  <button 
-                    onClick={() => setPreviewFileItem(null)} 
+                  <button
+                    onClick={() => setPreviewFileItem(null)}
                     className="text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     Close Preview
@@ -1378,8 +1370,8 @@ export default function AnalyticsDashboard() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
                     <BarChart3 className="h-4.5 w-4.5 text-indigo-500" /> Data Profiling Summary: {profilingFileItem.file_name}
                   </h3>
-                  <button 
-                    onClick={() => setProfilingFileItem(null)} 
+                  <button
+                    onClick={() => setProfilingFileItem(null)}
                     className="text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     Close Profiler
@@ -1395,9 +1387,8 @@ export default function AnalyticsDashboard() {
                         <div className="space-y-1">
                           <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
                             <span className="font-bold text-slate-800 text-xs truncate max-w-[150px]">{col.name}</span>
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                              col.type === 'numeric' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                            }`}>{col.type}</span>
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${col.type === 'numeric' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                              }`}>{col.type}</span>
                           </div>
 
                           <div className="grid grid-cols-2 gap-2 py-1 text-[10px] text-slate-500 font-semibold">
@@ -1409,7 +1400,7 @@ export default function AnalyticsDashboard() {
 
                         {col.type === 'numeric' && col.mean !== null && (
                           <div className="bg-white border border-slate-100 rounded-xl p-2.5 space-y-1 text-[9px] text-slate-500 font-semibold shadow-inner-sm">
-                            <div className="flex justify-between"><span>Mean:</span><span className="text-slate-800 font-bold">{col.mean.toLocaleString(undefined, {maximumFractionDigits: 2})}</span></div>
+                            <div className="flex justify-between"><span>Mean:</span><span className="text-slate-800 font-bold">{col.mean.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div>
                             <div className="flex justify-between"><span>Min:</span><span className="text-slate-800 font-bold">{col.min}</span></div>
                             <div className="flex justify-between"><span>Max:</span><span className="text-slate-800 font-bold">{col.max}</span></div>
                           </div>
@@ -1457,7 +1448,7 @@ export default function AnalyticsDashboard() {
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <Settings className="h-4 w-4 text-indigo-600" /> Interface Preferences
               </h2>
-              
+
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -1467,12 +1458,12 @@ export default function AnalyticsDashboard() {
                     <p className="text-xs text-slate-500 font-medium mt-1">Configure your own Groq API Key to bypass public limits.</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3 pt-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">Groq API Key (Optional)</label>
-                    <input 
-                      type="password" 
+                    <input
+                      type="password"
                       value={groqApiKey}
                       onChange={(e) => handleSaveApiKey(e.target.value)}
                       placeholder="gsk_..."
@@ -1488,7 +1479,7 @@ export default function AnalyticsDashboard() {
                   <h4 className="text-xs font-bold text-slate-700">Application Theme</h4>
                   <p className="text-[10px] text-slate-400 font-medium">Switch between light and dark modes.</p>
                 </div>
-                <select 
+                <select
                   value={theme}
                   onChange={(e) => handleThemeChange(e.target.value as any)}
                   className="bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1503,7 +1494,7 @@ export default function AnalyticsDashboard() {
                   <h4 className="text-xs font-bold text-slate-700">Compact Layout</h4>
                   <p className="text-[10px] text-slate-400 font-medium">Reduce whitespace and padding for higher density.</p>
                 </div>
-                <div 
+                <div
                   onClick={handleCompactToggle}
                   className={`w-10 h-5 rounded-full flex items-center px-1 cursor-pointer transition-colors ${isCompact ? 'bg-indigo-500' : 'bg-slate-200'}`}
                 >
