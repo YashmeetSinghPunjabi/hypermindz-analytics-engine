@@ -18,6 +18,13 @@ from db_manager import init_db
 import db_manager
 import auth
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.utilities import SQLDatabase
+from langchain_community.agent_toolkits import create_sql_agent
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+
+
 app = FastAPI(title="HyperMindZ Tabular NL-to-SQL Engine")
 
 # Configure relaxed CORS settings for Next.js app
@@ -280,8 +287,9 @@ def seed_sample_data(user_id: str):
     ]
     
     for ds in datasets:
+        unique_file_id = f"{user_id}_{ds['file_id']}"
         # Check if the dataset metadata is already seeded for this user
-        if db_manager.get_file_by_id(ds["file_id"], user_id):
+        if db_manager.get_file_by_id(unique_file_id, user_id):
             continue
             
         sample_csv_path = os.path.join(BASE_DIR, ds["filename"])
@@ -297,7 +305,7 @@ def seed_sample_data(user_id: str):
             df.columns = [''.join(e for e in c if e.isalnum() or e == '_') for c in df.columns]
             
             # Establish isolated SQLite database
-            db_path = get_user_db_path(user_id, ds["file_id"])
+            db_path = get_user_db_path(user_id, unique_file_id)
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             conn = sqlite3.connect(db_path)
             df.to_sql(table_name, conn, if_exists='replace', index=False)
@@ -311,7 +319,7 @@ def seed_sample_data(user_id: str):
                 row_count=len(df),
                 columns=list(df.columns),
                 sample_rows=df.head(3).to_dict(orient="records"),
-                custom_file_id=ds["file_id"]
+                custom_file_id=unique_file_id
             )
         except Exception as e:
             print(f"Error seeding sample dataset {ds['filename']}: {e}")
@@ -384,23 +392,26 @@ async def upload_csv(
 
     try:
         # Check file size (Read chunks to verify size doesn't exceed 10MB)
-        file_size = 0
         contents = await file.read()
-        file_size = len(contents)
-        if file_size > 10 * 1024 * 1024:
+        if len(contents) > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="File exceeds maximum limit of 10MB.")
         
         # Reset file read cursor
         await file.seek(0)
         
-        # Read into Pandas
-        df = pd.read_csv(file.file)
+        # Read into Pandas with robust encoding support
+        try:
+            df = pd.read_csv(file.file, encoding='utf-8')
+        except UnicodeDecodeError:
+            await file.seek(0)
+            df = pd.read_csv(file.file, encoding='latin-1')
+            
         if len(df) > 100000:
             df = df.head(100000)
 
         # Standardize column headers to avoid SQLite issues
-        df.columns = [c.strip().replace(' ', '_').replace('-', '_').lower() for c in df.columns]
-        df.columns = [''.join(e for e in c if e.isalnum() or e == '_') for c in df.columns]
+        df.columns = [str(c).strip().replace(' ', '_').replace('-', '_').lower() for c in df.columns]
+        df.columns = [''.join(e for e in str(c) if e.isalnum() or e == '_') for c in df.columns]
 
         file_id = str(uuid.uuid4())
         table_name = f"data_{file_id.replace('-', '_')}"
@@ -413,6 +424,10 @@ async def upload_csv(
         df.to_sql(table_name, conn, if_exists='replace', index=False)
         conn.close()
 
+        # Handle NaNs for JSON serialization
+        import numpy as np
+        safe_df = df.head(3).replace({np.nan: None})
+
         # Add to metadata catalog
         db_manager.add_file(
             user_id=user_id,
@@ -420,20 +435,21 @@ async def upload_csv(
             table_name=table_name,
             row_count=len(df),
             columns=list(df.columns),
-            sample_rows=df.head(3).to_dict(orient="records"),
+            sample_rows=safe_df.to_dict(orient="records"),
             custom_file_id=file_id
         )
 
         return {
             "status": "success",
             "file_id": file_id,
-            "rows_ingested": len(df),
-            "columns_discovered": list(df.columns)
+            "table_name": table_name,
+            "row_count": len(df),
+            "columns": list(df.columns)
         }
-    except HTTPException as http_exc:
-        raise http_exc
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to ingest dataset structure: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}")
 
 @app.get("/api/files/{file_id}/preview", response_model=FilePreviewResponse)
 def preview_file(file_id: str, user_id: str = Depends(auth.get_current_user_id)):
@@ -466,6 +482,31 @@ def preview_file(file_id: str, user_id: str = Depends(auth.get_current_user_id))
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch preview: {str(e)}")
+
+@app.get("/api/files/{file_id}/suggestions")
+def get_file_suggestions(file_id: str, user_id: str = Depends(auth.get_current_user_id)):
+    file_info = db_manager.get_file_by_id(file_id, user_id)
+    if not file_info:
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    # Format table name to be human readable
+    clean_table_name = file_info["table_name"].replace("data_", "").replace("_", " ").title()
+    columns = file_info["columns"]
+    
+    numeric_cols = [c for c in columns if any(k in c.lower() for k in ['revenue', 'spend', 'price', 'amount', 'val', 'count', 'qty', 'quantity', 'total', 'salary', 'age'])]
+    cat_cols = [c for c in columns if any(k in c.lower() for k in ['category', 'region', 'type', 'status', 'gender', 'name', 'city', 'state', 'country', 'date', 'department', 'role'])]
+    
+    num = numeric_cols[0] if numeric_cols else columns[0]
+    cat = cat_cols[0] if cat_cols else (columns[1] if len(columns) > 1 else columns[0])
+    
+    suggestions = [
+        {"text": f"What is the total {num} by {cat} in {clean_table_name}?", "category": "Aggregation"},
+        {"text": f"Show top 5 {cat} by highest {num}", "category": "Sorting"},
+        {"text": f"What is the average {num} across all {clean_table_name}?", "category": "Summary"},
+        {"text": f"Show the distribution of {cat}", "category": "Analysis"}
+    ]
+    
+    return {"suggestions": suggestions}
 
 @app.delete("/api/files/{file_id}")
 def delete_user_file(file_id: str, user_id: str = Depends(auth.get_current_user_id)):
@@ -554,144 +595,117 @@ def reset_chat_thread(file_id: str, user_id: str = Depends(auth.get_current_user
     db_manager.clear_chat_history(user_id, file_id)
     return {"status": "success", "message": "Conversational memory reset successfully."}
 
+# ... (Previous imports and schemas remain the same)
+
+def handle_unanswerable(payload: QueryExecutionPayload, user_id: str, explanation: str, file_name: str) -> QueryResultResponse:
+    db_manager.add_chat_message(user_id, payload.file_id, "user", payload.natural_language_query)
+    db_manager.add_chat_message(user_id, payload.file_id, "model", explanation)
+    return QueryResultResponse(
+        sql_query="",
+        explanation=explanation,
+        visualization_config={"recommended": False, "type": "none", "x_axis_key": None, "y_axis_key": None},
+        data=[],
+        source_file=file_name
+    )
+
 @app.post("/api/query", response_model=QueryResultResponse)
 def query_tabular_data(
     payload: QueryExecutionPayload,
     user_id: str = Depends(auth.get_current_user_id),
     x_gemini_key: Optional[str] = Header(None, alias="X-Gemini-Key")
 ):
-    """
-    Translates Natural Language queries using structural Gemini parsing,
-    validates the output query against strict security filters, and executes it.
-    Incorporates past user messages to enable multi-turn, follow-up queries.
-    """
     file_info = db_manager.get_file_by_id(payload.file_id, user_id)
     if not file_info:
-        raise HTTPException(status_code=404, detail="The requested dataset does not exist or hasn't been uploaded yet.")
+        raise HTTPException(status_code=404, detail="Dataset not found.")
 
     db_path = get_user_db_path(user_id, payload.file_id)
-    if not os.path.exists(db_path):
-        raise HTTPException(status_code=404, detail="Database file missing.")
+    db_uri = f"sqlite:///{db_path}"
+    db = SQLDatabase.from_uri(db_uri)
 
-    table_name = file_info["table_name"]
-    conn = sqlite3.connect(db_path)
+    api_key = x_gemini_key or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Gemini API Key is missing. Please configure it in your Settings or environment.")
     
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-1.5-flash", 
+        google_api_key=api_key,
+        temperature=0,
+        convert_system_message_to_human=True
+    )
+
     try:
-        # 1. Grab actual column names and data samples
-        schema_context, sample_rows = extract_schema_context(conn, table_name)
-        
-        # 2. Retrieve last 10 chat messages to maintain context
         chat_history = db_manager.get_chat_history(user_id, payload.file_id)
-        chat_context_str = ""
-        if chat_history:
-            chat_context_str = "Conversation History (for context on follow-up questions):\n"
-            for msg in chat_history[-10:]:
-                chat_context_str += f"{msg['role'].upper()}: {msg['content']}\n"
-            chat_context_str += "\n"
+        history_str = "\\n".join([f"{m['role']}: {m['content']}" for m in chat_history[-5:]])
 
-        # 3. Build the intelligent prompt guiding Gemini
-        system_prompt = (
-            f"You are an expert data analyst. Translate the user's natural language question into an optimized, executable SQLite query.\n"
-            f"Rely EXCLUSIVELY on this schema definition mapping:\n"
-            f"Table Name: {table_name}\n"
-            f"Columns: {schema_context}\n"
-            f"Sample Matrix Target Footprints:\n{sample_rows}\n\n"
-            f"{chat_context_str}"
-            f"Strict Instructions:\n"
-            f"- Output ONLY valid SQLite syntax in the sql_query field. No markdown, no 'sql' prefix. Just the query.\n"
-            f"- Do not alter tables or update values. Keep it completely read-only.\n"
-            f"- Handle ambiguous or completely unanswerable questions gracefully by returning: sql_query = \"\" and providing a friendly error or explanation in the explanation field.\n"
-            f"- Evaluate follow-up questions in context. For instance, if the previous query was aggregated by a group and the current is 'filter that for West', combine the logic.\n"
-            f"- If the query intent implies distributions, timelines, trends, aggregations, or breakdowns, toggle visualization_recommended to true and supply the correct x_axis_key and y_axis_key from your query columns.\n"
-            f"- Make sure the selected x_axis_key and y_axis_key MATCH EXACTLY the column names in the SELECT clause of your SQL query."
-        )
-
-        # Use client-provided key header or server default
-        api_key_to_use = x_gemini_key or os.getenv("GEMINI_API_KEY", "")
-        if not api_key_to_use:
-            raise HTTPException(
-                status_code=400,
-                detail="Gemini API Key is missing. Please configure it in your Settings or environment."
-            )
-            
-        gemini_client = genai.Client(api_key=api_key_to_use)
-        # Default fallback model name
-        model_name_to_use = "gemini-2.5-flash"
-
-        # 4. Request Native Structured Output from Gemini
-        response = gemini_client.models.generate_content(
-            model=model_name_to_use,
-            contents=payload.natural_language_query,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0.0,  # Absolute deterministic data processing
-                response_mime_type="application/json",
-                response_schema=SQLGenerationResponse,
-            ),
-        )
-
-        # Map Gemini's structured response back to our Pydantic schema
-        structured_response = SQLGenerationResponse.model_validate_json(response.text)
+        agent_executor = create_sql_agent(llm, db=db, agent_type="tool-calling", verbose=True, return_intermediate_steps=True)
         
-        # If Gemini marked it as unanswerable
-        if not structured_response.sql_query.strip():
-            db_manager.add_chat_message(user_id, payload.file_id, "user", payload.natural_language_query)
-            db_manager.add_chat_message(user_id, payload.file_id, "model", structured_response.explanation)
-            
-            return QueryResultResponse(
-                sql_query="",
-                explanation=structured_response.explanation,
-                visualization_config={"recommended": False, "type": "none", "x_axis_key": None, "y_axis_key": None},
-                data=[],
-                source_file=file_info["file_name"]
-            )
+        agent_prompt = f"""
+You are an expert data analyst. Translate the user's natural language question into an optimized, executable SQLite query and answer it.
+Chat History for context:
+{history_str}
 
-        # 5. Strict Code Path Safety Verification Check
-        sanitized_sql = SQLSecurityValidator.validate_query(structured_response.sql_query)
+User Question: {payload.natural_language_query}
+"""
+        response = agent_executor.invoke({"input": agent_prompt})
+        explanation = response.get("output", "")
+        
+        sql_query = ""
+        for action, observation in response.get("intermediate_steps", []):
+            if action.tool == "sql_db_query":
+                if isinstance(action.tool_input, dict):
+                    sql_query = action.tool_input.get("query", "")
+                else:
+                    sql_query = str(action.tool_input)
+                break
+                
+        if not sql_query.strip():
+             return handle_unanswerable(payload, user_id, explanation, file_info["file_name"])
 
-        # 6. Execute query safely via Pandas
+        sanitized_sql = SQLSecurityValidator.validate_query(sql_query)
+        
+        conn = sqlite3.connect(db_path)
         df_result = pd.read_sql_query(sanitized_sql, conn)
-        
-        # Replace NaN/Infinity values to prevent JSON serialization errors
-        df_result = df_result.replace({np.nan: None})
-        results_records = df_result.to_dict(orient="records")
+        conn.close()
 
-        # 7. Record to Chat Context and Query History databases
-        db_manager.add_chat_message(user_id, payload.file_id, "user", payload.natural_language_query)
-        db_manager.add_chat_message(user_id, payload.file_id, "model", f"Generated SQL: {sanitized_sql}. Explanation: {structured_response.explanation}")
+        viz_prompt = ChatPromptTemplate.from_messages([
+            ("system", "Analyze this SQL query and its results context to recommend a UI chart. Return ONLY JSON matching this schema: {{\\"visualization_recommended\\": true/false, \\"chart_type\\": \\"bar\\"/\\"line\\"/\\"pie\\"/\\"none\\", \\"x_axis_key\\": \\"column_name_or_null\\", \\"y_axis_key\\": \\"column_name_or_null\\"}}"),
+            ("human", "SQL: {sql}\\nQuestion: {question}")
+        ])
+        viz_chain = viz_prompt | llm | JsonOutputParser()
+        viz_config = viz_chain.invoke({"sql": sanitized_sql, "question": payload.natural_language_query})
         
         viz_cfg = {
-            "recommended": structured_response.visualization_recommended,
-            "type": structured_response.chart_type,
-            "x_axis_key": structured_response.x_axis_key,
-            "y_axis_key": structured_response.y_axis_key
+            "recommended": viz_config.get("visualization_recommended", False),
+            "type": viz_config.get("chart_type", "none"),
+            "x_axis_key": viz_config.get("x_axis_key"),
+            "y_axis_key": viz_config.get("y_axis_key")
         }
+
+        db_manager.add_chat_message(user_id, payload.file_id, "user", payload.natural_language_query)
+        db_manager.add_chat_message(user_id, payload.file_id, "model", f"Generated SQL: {sanitized_sql}. Explanation: {explanation}")
         
         db_manager.add_query_history(
             user_id=user_id,
             file_id=payload.file_id,
             question=payload.natural_language_query,
             sql_query=sanitized_sql,
-            explanation=structured_response.explanation,
+            explanation=explanation,
             viz_config=viz_cfg
         )
 
         return QueryResultResponse(
             sql_query=sanitized_sql,
-            explanation=structured_response.explanation,
+            explanation=explanation,
             visualization_config=viz_cfg,
-            data=results_records,
+            data=df_result.replace({np.nan: None}).to_dict(orient="records"),
             source_file=file_info["file_name"]
         )
 
-    except HTTPException as secure_exception:
-        # Record failure message to chat thread to keep context clean
+    except HTTPException as e:
         db_manager.add_chat_message(user_id, payload.file_id, "user", payload.natural_language_query)
-        db_manager.add_chat_message(user_id, payload.file_id, "model", f"Error: {secure_exception.detail}")
-        raise secure_exception
-    except Exception as general_fault:
+        db_manager.add_chat_message(user_id, payload.file_id, "model", f"Error: {e.detail}")
+        raise e
+    except Exception as e:
         db_manager.add_chat_message(user_id, payload.file_id, "user", payload.natural_language_query)
-        db_manager.add_chat_message(user_id, payload.file_id, "model", f"Error: {str(general_fault)}")
-        raise HTTPException(status_code=500, detail=f"Pipeline error under execution processing: {str(general_fault)}")
-    finally:
-        conn.close()
+        db_manager.add_chat_message(user_id, payload.file_id, "model", f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Agent Error: {str(e)}")

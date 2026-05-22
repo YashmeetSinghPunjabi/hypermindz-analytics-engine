@@ -8,7 +8,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 METADATA_DB_PATH = os.path.join(BASE_DIR, "metadata.db")
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(METADATA_DB_PATH, timeout=30.0)
+    conn = sqlite3.connect(METADATA_DB_PATH, timeout=60.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
