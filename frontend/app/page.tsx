@@ -454,7 +454,7 @@ export default function AnalyticsDashboard() {
           ...chatThreads,
           [currentFileId]: [...updatedThread, { 
             role: 'model', 
-            content: `I hit a snag while executing your query.`, 
+            content: `Error: ${errorMsg}`, 
             explanation: errorMsg,
             isError: true 
           }]
