@@ -57,7 +57,8 @@ interface ChatMessage {
 export default function AnalyticsDashboard() {
   // New UX States
   const [showPassword, setShowPassword] = useState(false);
-  const defaultApiBase = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+  const isProd = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  const defaultApiBase = process.env.NEXT_PUBLIC_API_URL || (isProd ? 'https://hypermindz-backend-1.onrender.com/api' : 'http://127.0.0.1:8000/api');
   const [apiBaseUrl, setApiBaseUrl] = useState<string>(defaultApiBase);
   const API_BASE = apiBaseUrl;
 
