@@ -73,7 +73,7 @@ export default function AnalyticsDashboard() {
   const [authLoading, setAuthLoading] = useState(false);
 
   // App Layout State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'settings' | 'playground'>('dashboard');
 
   // CSV Data State
   const [files, setFiles] = useState<FileItem[]>([]);
