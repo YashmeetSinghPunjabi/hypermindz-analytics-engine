@@ -100,6 +100,7 @@ export default function AnalyticsDashboard() {
   const [queryHistory, setQueryHistory] = useState<any[]>([]);
   const [geminiApiKey, setGeminiApiKey] = useState("");
 
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<{text: string; category: string}[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load Auth Token from localStorage on startup
@@ -130,6 +131,18 @@ export default function AnalyticsDashboard() {
       fetchQueryHistory();
     }
   }, [token]);
+
+  // Fetch dynamic suggestions when active file changes
+  useEffect(() => {
+    if (activeFile && token) {
+      fetch(`${API_BASE}/files/${activeFile.id}/suggestions`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      .then(res => res.ok ? res.json() : { suggestions: [] })
+      .then(data => setDynamicSuggestions(data.suggestions))
+      .catch(() => setDynamicSuggestions([]));
+    }
+  }, [activeFile, token, API_BASE]);
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -460,35 +473,7 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  // Pre-configured query prompts based on active file schema
-  const getSuggestedQueries = (): { text: string; category: string }[] => {
-    if (!activeFile) return [];
-    
-    // Sample e-commerce queries
-    if (activeFile.id === "sample_ecommerce_sales") {
-      return [
-        { text: "What is the total revenue by product category?", category: "Aggregation" },
-        { text: "Show top 5 products by revenue", category: "Sorting" },
-        { text: "What is the average quantity per order by region?", category: "Grouping" },
-        { text: "Show orders over $300 that came from mobile users", category: "Filtering" },
-        { text: "Show the monthly revenue trend", category: "Trend Analysis" },
-        { text: "Filter that for West region", category: "Follow-up Context" }
-      ];
-    }
 
-    // Dynamic fallback suggestion based on actual column headers
-    const numericCols = activeFile.columns.filter(c => c.includes('revenue') || c.includes('spend') || c.includes('price') || c.includes('amount') || c.includes('val') || c.includes('count'));
-    const catCols = activeFile.columns.filter(c => c.includes('category') || c.includes('region') || c.includes('type') || c.includes('status') || c.includes('gender') || c.includes('name'));
-    
-    const numCol = numericCols[0] || activeFile.columns[0];
-    const catCol = catCols[0] || activeFile.columns[1] || activeFile.columns[0];
-    
-    return [
-      { text: `What is the total ${numCol} grouped by ${catCol}?`, category: "Group & Aggregate" },
-      { text: `Show the top 10 records ordered by ${numCol} descending`, category: "Sort & Limit" },
-      { text: `Average value of ${numCol} and count of rows`, category: "Summary Stats" }
-    ];
-  };
 
   // Renders the Recharts visualization based on configs
   const renderMessageChart = (msg: ChatMessage, msgIndex: number) => {
@@ -1027,7 +1012,7 @@ export default function AnalyticsDashboard() {
                   <div className="flex items-start space-x-2">
                     <Sparkles className="h-4 w-4 text-indigo-500 shrink-0 mt-0.5" />
                     <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
-                      {getSuggestedQueries().map((q, qIdx) => (
+                      {dynamicSuggestions.map((q, qIdx) => (
                         <button
                           key={qIdx}
                           onClick={() => handleSendQuery(q.text)}
@@ -1389,53 +1374,6 @@ export default function AnalyticsDashboard() {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="p-8 max-w-2xl space-y-6 flex-1">
-            
-            {/* Backend URL Configuration Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Globe className="h-4 w-4 text-indigo-600" /> Backend URL Configuration
-              </h2>
-              
-              <div className="space-y-1.5">
-                <label htmlFor="apiBaseUrlSetting" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">FastAPI Connection Endpoint</label>
-                <input
-                  id="apiBaseUrlSetting"
-                  type="text"
-                  value={apiBaseUrl}
-                  onChange={(e) => {
-                    setApiBaseUrl(e.target.value);
-                    localStorage.setItem("hm_api_base", e.target.value);
-                  }}
-                  placeholder="http://127.0.0.1:8000/api"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-xs placeholder:text-slate-350 font-semibold"
-                />
-                <p className="text-[10px] text-slate-400 leading-normal font-semibold">
-                  Specify the address of your running FastAPI server. Changes are saved automatically and applied immediately to all queries and catalog calls.
-                </p>
-              </div>
-            </div>
-
-            {/* Developer Credentials Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Settings className="h-4 w-4 text-indigo-600" /> Developer Configurations
-              </h2>
-              
-              <div className="space-y-1.5">
-                <label htmlFor="apiKey" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Gemini API Key Override</label>
-                <input
-                  id="apiKey"
-                  type="password"
-                  value={geminiApiKey}
-                  onChange={(e) => handleSaveApiKey(e.target.value)}
-                  placeholder="Paste your Gemini AI Key (starts with AIza...)"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-xs placeholder:text-slate-300 font-semibold"
-                />
-                <p className="text-[10px] text-slate-400 leading-normal font-semibold">
-                  By default, the server uses its own set environment API Key. Providing a key here overrides the server credentials and runs requests using your own key safely, stored locally in your browser sandbox.
-                </p>
-              </div>
-            </div>
 
             {/* Seed Actions Card */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
