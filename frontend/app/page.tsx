@@ -100,7 +100,7 @@ export default function AnalyticsDashboard() {
   const [chatThreads, setChatThreads] = useState<{ [fileId: string]: ChatMessage[] }>({});
   const [selectedChartOverride, setSelectedChartOverride] = useState<{ [msgIndex: number]: string }>({});
   const [queryHistory, setQueryHistory] = useState<any[]>([]);
-  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [groqApiKey, setGroqApiKey] = useState("");
 
   const [dynamicSuggestions, setDynamicSuggestions] = useState<{text: string; category: string}[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -110,7 +110,7 @@ export default function AnalyticsDashboard() {
     const savedToken = localStorage.getItem("hm_token");
     const savedEmail = localStorage.getItem("hm_email");
     const savedUserId = localStorage.getItem("hm_userid");
-    const savedKey = localStorage.getItem("hm_gemini_key");
+    const savedKey = localStorage.getItem("hm_groq_key");
     const savedApiBase = localStorage.getItem("hm_api_base");
 
     if (savedToken && savedEmail && savedUserId) {
@@ -119,7 +119,7 @@ export default function AnalyticsDashboard() {
       setUserId(savedUserId);
     }
     if (savedKey) {
-      setGeminiApiKey(savedKey);
+      setGroqApiKey(savedKey);
     }
     if (savedApiBase) {
       setApiBaseUrl(savedApiBase);
@@ -397,11 +397,11 @@ export default function AnalyticsDashboard() {
   };
 
   const handleSaveApiKey = (key: string) => {
-    setGeminiApiKey(key);
+    setGroqApiKey(key);
     if (key.trim()) {
-      localStorage.setItem("hm_gemini_key", key);
+      localStorage.setItem("hm_groq_key", key);
     } else {
-      localStorage.removeItem("hm_gemini_key");
+      localStorage.removeItem("hm_groq_key");
     }
   };
 
@@ -430,8 +430,8 @@ export default function AnalyticsDashboard() {
       "Authorization": `Bearer ${token}`
     };
 
-    if (geminiApiKey.trim()) {
-      headers["X-Gemini-Key"] = geminiApiKey.trim();
+    if (groqApiKey.trim()) {
+      headers["X-Groq-Key"] = groqApiKey.trim();
     }
 
     try {
@@ -1457,6 +1457,32 @@ export default function AnalyticsDashboard() {
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <Settings className="h-4 w-4 text-indigo-600" /> Interface Preferences
               </h2>
+              
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                      <Key className="h-4 w-4 text-indigo-500" /> API Keys
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-1">Configure your own Groq API Key to bypass public limits.</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">Groq API Key (Optional)</label>
+                    <input 
+                      type="password" 
+                      value={groqApiKey}
+                      onChange={(e) => handleSaveApiKey(e.target.value)}
+                      placeholder="gsk_..."
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-mono text-slate-600"
+                    />
+                    <p className="text-[10px] text-slate-400 font-medium">If provided, queries will use this key securely. Not stored on our servers.</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-between items-center py-2 border-b border-slate-100">
                 <div>
                   <h4 className="text-xs font-bold text-slate-700">Application Theme</h4>
