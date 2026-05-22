@@ -270,7 +270,7 @@ export default function AnalyticsDashboard() {
         uploaded_at: new Date().toISOString()
       };
       setActiveFile(newFileItem);
-      setActiveTab('dashboard');
+      setActiveTab('catalog');
     } catch (err: any) {
       setUploadError(err.message || "Failed to process CSV file.");
     } finally {
@@ -771,6 +771,18 @@ export default function AnalyticsDashboard() {
                 : 'hover:bg-slate-800 hover:text-white'
             }`}
           >
+            <BarChart3 className="h-4 w-4" />
+            <span>Dashboard</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('playground')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all ${
+              activeTab === 'playground'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                : 'hover:bg-slate-800 hover:text-white'
+            }`}
+          >
             <MessageSquare className="h-4 w-4" />
             <span>Playground</span>
           </button>
@@ -821,8 +833,39 @@ export default function AnalyticsDashboard() {
       {/* Main Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
-        {/* PlayGround Tab */}
+        {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
+          <div className="p-8 max-w-5xl space-y-6 flex-1">
+            <h1 className="text-2xl font-black text-slate-800">Workspace Dashboard</h1>
+            <p className="text-sm text-slate-500 font-medium">Welcome back! Here is an overview of your data sandboxes.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Datasets</span>
+                <span className="text-4xl font-black text-indigo-600">{files.length}</span>
+              </div>
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Rows Indexed</span>
+                <span className="text-4xl font-black text-emerald-500">{files.reduce((acc, f) => acc + f.row_count, 0).toLocaleString()}</span>
+              </div>
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Saved Queries</span>
+                <span className="text-4xl font-black text-amber-500">{queryHistory.length}</span>
+              </div>
+            </div>
+            
+            <div className="mt-8 bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
+              <h2 className="text-sm font-bold text-indigo-800 mb-2 flex items-center gap-2"><Sparkles className="h-4 w-4" /> Quick Actions</h2>
+              <div className="flex space-x-4 mt-4">
+                <button onClick={() => setActiveTab('catalog')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-500">Upload New Dataset</button>
+                <button onClick={() => setActiveTab('playground')} className="bg-white text-indigo-600 border border-indigo-200 px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-50">Open AI Terminal</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PlayGround Tab */}
+        {activeTab === 'playground' && (
           <div className="flex-1 flex min-h-0 bg-slate-50">
             {/* Chat Conversation Thread Section */}
             <div className="flex-1 flex flex-col border-r border-slate-200 max-h-screen">
@@ -1374,9 +1417,37 @@ export default function AnalyticsDashboard() {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="p-8 max-w-2xl space-y-6 flex-1">
+            <h1 className="text-2xl font-black text-slate-800 mb-6">User Settings</h1>
+
+            {/* UI Customization */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <Settings className="h-4 w-4 text-indigo-600" /> Interface Preferences
+              </h2>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-700">Application Theme</h4>
+                  <p className="text-[10px] text-slate-400 font-medium">Switch between light and dark modes.</p>
+                </div>
+                <select className="bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="light">Light Mode (Active)</option>
+                  <option value="dark">Dark Mode</option>
+                  <option value="system">System Default</option>
+                </select>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-700">Compact Layout</h4>
+                  <p className="text-[10px] text-slate-400 font-medium">Reduce whitespace and padding for higher density.</p>
+                </div>
+                <div className="w-10 h-5 bg-slate-200 rounded-full flex items-center px-1 cursor-pointer">
+                  <div className="w-3.5 h-3.5 bg-white rounded-full shadow-sm"></div>
+                </div>
+              </div>
+            </div>
 
             {/* Seed Actions Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <Database className="h-4 w-4 text-indigo-600" /> Sandbox Database Operations
               </h2>
