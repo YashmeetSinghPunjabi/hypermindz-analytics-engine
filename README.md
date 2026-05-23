@@ -8,9 +8,6 @@ An intelligent, secure, end-to-end GenAI application that lets users upload CSV 
 
 - **Live Application URL**: [https://hypermindz-frontend.vercel.app/](https://hypermindz-frontend.vercel.app/)
 - **Deployed Backend URL**: [https://hypermindz-backend-1.onrender.com/api](https://hypermindz-backend-1.onrender.com/api) (Render API URL)
-- **Demo Credentials**:
-  - **Email**: `demo@hypermindz.com`
-  - **Password**: `password123` *(Automatically seeded with sample sales, marketing, and product engagement datasets)*
 
 ---
 
