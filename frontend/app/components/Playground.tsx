@@ -168,7 +168,7 @@ export default function Playground({
   return (
     <div className="flex-1 flex min-h-0 bg-slate-50">
       {/* Chat Conversation Thread Section */}
-      <div className="flex-1 flex flex-col border-r border-slate-200 max-h-screen">
+      <div className="flex-1 flex flex-col border-r border-slate-200 min-h-0">
 
         {/* Playground Header */}
         <header className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shadow-sm">
