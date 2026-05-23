@@ -513,36 +513,34 @@ export default function AnalyticsDashboard() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-gradient-to-tr from-slate-900 via-slate-950 to-indigo-950 flex items-center justify-center p-4 sm:p-6 select-none font-sans relative overflow-x-hidden overflow-y-auto">
-        {/* Decorative background blur shapes */}
-        <div className="absolute top-1/4 left-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-indigo-500/10 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-purple-500/10 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none"></div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 select-none font-sans relative overflow-x-hidden overflow-y-auto">
+
 
         {/* Inner layout container for better sizing */}
-        <div className="w-full max-w-xl my-8 space-y-6 relative z-10 flex flex-col items-center">
+        <div className="w-full max-w-md my-8 space-y-6 relative z-10 flex flex-col items-center">
 
           {/* Main Auth Card Container */}
-          <div className="w-full bg-slate-900/70 backdrop-blur-2xl border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6">
+          <div className="w-full bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
 
             {/* Header Section */}
             <div className="text-center space-y-3">
-              <div className="inline-flex bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-3 rounded-2xl border border-indigo-400/20 shadow-lg shadow-indigo-500/15">
+              <div className="inline-flex bg-indigo-50 text-indigo-600 p-3 rounded-2xl border border-indigo-100 shadow-sm">
                 <Database className="h-7 w-7" />
               </div>
               <div>
-                <h1 className="text-2xl font-black tracking-tight text-white bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-black tracking-tight text-slate-800">
                   HyperMindZ Analytics
                 </h1>
-                <p className="text-xs font-semibold text-indigo-400 mt-1">
+                <p className="text-xs font-semibold text-slate-500 mt-1">
                   Natural Language Tabular Query Console
                 </p>
               </div>
             </div>
 
             {/* Sliding Toggle between Sign In and Create Account */}
-            <div className="relative grid grid-cols-2 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80">
+            <div className="relative grid grid-cols-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
               <div
-                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-slate-800 rounded-lg shadow-md transition-all duration-300 ease-out ${isRegisterMode ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 ease-out ${isRegisterMode ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'
                   }`}
               />
               <button
@@ -551,7 +549,7 @@ export default function AnalyticsDashboard() {
                   setIsRegisterMode(false);
                   setAuthError(null);
                 }}
-                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${!isRegisterMode ? "text-white" : "text-slate-400 hover:text-slate-200"
+                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${!isRegisterMode ? "text-slate-800" : "text-slate-500 hover:text-slate-700"
                   }`}
               >
                 Sign In
@@ -562,7 +560,7 @@ export default function AnalyticsDashboard() {
                   setIsRegisterMode(true);
                   setAuthError(null);
                 }}
-                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${isRegisterMode ? "text-white" : "text-slate-400 hover:text-slate-200"
+                className={`relative z-10 py-2 text-xs font-bold rounded-lg transition-colors duration-200 ${isRegisterMode ? "text-slate-800" : "text-slate-500 hover:text-slate-700"
                   }`}
               >
                 Create Account
@@ -571,7 +569,7 @@ export default function AnalyticsDashboard() {
 
             {/* Context Explainer Header */}
             <div className="text-center px-2">
-              <p className="text-xs text-slate-400 font-medium">
+              <p className="text-xs text-slate-500 font-medium">
                 {!isRegisterMode
                   ? "Enter your credentials to access your isolated data sandbox."
                   : "Register a secure account to load datasets and get SQL insights."
@@ -580,17 +578,17 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Form Section */}
-            <form onSubmit={handleAuth} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-5">
               {authError && (
-                <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl flex items-start space-x-2 text-xs font-semibold">
-                  <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-600 rounded-2xl flex items-start space-x-2 text-xs font-semibold">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>{authError}</span>
                 </div>
               )}
 
               {/* Username Input */}
               <div className="space-y-1.5">
-                <label htmlFor="username" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label htmlFor="username" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Username
                 </label>
                 <div className="relative">
@@ -604,14 +602,14 @@ export default function AnalyticsDashboard() {
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     placeholder="e.g. analyst or admin"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-800 bg-slate-950/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm placeholder:text-slate-700 font-medium text-white transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-sm placeholder:text-slate-400 font-medium text-slate-800 transition-all shadow-sm"
                   />
                 </div>
               </div>
 
               {/* Password Input */}
               <div className="space-y-1.5">
-                <label htmlFor="pass" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <label htmlFor="pass" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Password
                 </label>
                 <div className="relative">
@@ -625,12 +623,12 @@ export default function AnalyticsDashboard() {
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-800 bg-slate-950/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm placeholder:text-slate-700 font-medium text-white transition-all"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-sm placeholder:text-slate-400 font-medium text-slate-800 transition-all shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-300 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4 text-slate-400" />}
                   </button>
@@ -641,7 +639,7 @@ export default function AnalyticsDashboard() {
               <button
                 type="submit"
                 disabled={authLoading || !authEmail || !authPassword}
-                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-indigo-600 disabled:hover:to-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/20 text-sm flex items-center justify-center space-x-2 cursor-pointer mt-2"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2 mt-4"
               >
                 {authLoading ? (
                   <div className="flex items-center space-x-2">
@@ -662,7 +660,7 @@ export default function AnalyticsDashboard() {
   // --- Dashboard Console Render ---
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex select-none">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col md:flex-row select-none">
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}

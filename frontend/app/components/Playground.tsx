@@ -228,7 +228,7 @@ export default function Playground({
           ) : (
             (chatThreads[activeFile.id] || []).map((msg, index) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-3xl space-y-2 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md' : ''}`}>
+                <div className={`w-full md:max-w-3xl space-y-2 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md md:w-auto max-w-[90%]' : ''}`}>
 
                   {/* User Chat Bubble */}
                   {msg.role === 'user' && (
@@ -396,7 +396,7 @@ export default function Playground({
       </div>
 
       {/* Playground Right Side Execution Logs Panel */}
-      <div className="w-80 flex flex-col bg-white overflow-y-auto max-h-screen">
+      <div className="hidden lg:flex w-80 flex-col bg-white overflow-y-auto max-h-screen border-l border-slate-200">
         <div className="p-6 border-b border-slate-200 flex items-center space-x-2 shadow-sm">
           <History className="h-4 w-4 text-indigo-600" />
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Execution Logs</h3>
