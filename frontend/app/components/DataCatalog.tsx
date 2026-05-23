@@ -1,5 +1,31 @@
 import React from 'react';
-import { Upload, FileSpreadsheet, Eye, BarChart3, Trash2, AlertCircle, Sparkles, HelpCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, Eye, BarChart3, Trash2, AlertCircle, Sparkles, HelpCircle, Download } from 'lucide-react';
+
+const downloadDummyCSV = () => {
+  const csvHeaders = "Order ID,Order Date,Category,Product,Sales,Quantity,Discount,Profit,Region,Segment";
+  const csvRows = [
+    "CA-2026-152156,2026-05-01,Furniture,Chairs,261.96,2,0.00,41.91,South,Consumer",
+    "CA-2026-152156,2026-05-02,Furniture,Bookcases,731.94,3,0.00,219.58,South,Consumer",
+    "CA-2026-138688,2026-05-03,Office Supplies,Labels,14.62,2,0.00,6.87,West,Corporate",
+    "US-2026-108966,2026-05-11,Furniture,Tables,957.57,5,0.45,-383.03,South,Consumer",
+    "US-2026-108966,2026-05-12,Office Supplies,Storage,22.368,2,0.20,2.5164,South,Consumer",
+    "CA-2026-115812,2026-05-13,Furniture,Art,48.86,7,0.00,14.1694,West,Consumer",
+    "CA-2026-115812,2026-05-14,Office Supplies,Phones,7.28,4,0.00,1.9656,West,Consumer",
+    "CA-2026-115812,2026-05-15,Office Supplies,Binders,907.152,6,0.20,90.7152,West,Consumer",
+    "CA-2026-115812,2026-05-16,Office Supplies,Appliances,18.504,3,0.20,5.7825,West,Consumer",
+    "CA-2026-115812,2026-05-17,Office Supplies,Paper,114.90,5,0.00,34.47,West,Consumer"
+  ];
+  const csvContent = [csvHeaders, ...csvRows].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "sample_sales_data.csv");
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 interface DataCatalogProps {
   files: any[];
@@ -106,9 +132,19 @@ export default function DataCatalog({
               </div>
             )}
             {!uploadError && (
-              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                Upload any system CSV file. The analytics engine will automatically discover column schema formatting, normalize headings, spin up a dedicated SQLite database, and configure isolated read-only execute boundaries for your user session.
-              </p>
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                  Upload any system CSV file. The analytics engine will automatically discover column schema formatting, normalize headings, spin up a dedicated SQLite database, and configure isolated read-only execute boundaries for your user session.
+                </p>
+                <button
+                  type="button"
+                  onClick={downloadDummyCSV}
+                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 hover:bg-indigo-100/80 px-3.5 py-2 rounded-xl transition-all border border-indigo-100 shadow-sm"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download Sample CSV to Test
+                </button>
+              </div>
             )}
           </div>
         </div>

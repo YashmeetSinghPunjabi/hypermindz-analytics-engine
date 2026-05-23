@@ -38,6 +38,12 @@ def login_user(payload: UserLoginPayload):
     if not user or not auth.verify_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=400, detail="Incorrect email or password.")
     
+    # Automatically seed sample database if not already present
+    try:
+        seed_sample_data(user["id"])
+    except Exception as e:
+        print(f"Error seeding on login: {e}")
+
     token = auth.create_access_token({"sub": user["id"]})
     db_manager.update_user_active_token(user["id"], token)
     return AuthResponse(

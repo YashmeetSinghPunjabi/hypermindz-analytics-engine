@@ -114,6 +114,7 @@ export default function AnalyticsDashboard() {
   const [dynamicSuggestions, setDynamicSuggestions] = useState<{ text: string; category: string }[]>([]);
   const [selectedChartOverride, setSelectedChartOverride] = useState<{ [msgIndex: number]: string }>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Load Auth Token from localStorage on startup
   useEffect(() => {
@@ -490,6 +491,9 @@ export default function AnalyticsDashboard() {
       "Authorization": `Bearer ${token}`
     };
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await fetch(`${API_BASE}/query`, {
         method: "POST",
@@ -497,7 +501,8 @@ export default function AnalyticsDashboard() {
         body: JSON.stringify({
           file_id: currentFileId,
           natural_language_query: userQuery
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!checkAuthResponse(response)) return;
@@ -540,9 +545,121 @@ export default function AnalyticsDashboard() {
       // Update history catalog
       fetchQueryHistory();
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return;
+      }
       setQueryError(err.message || "Server connection lost.");
     } finally {
       setIsQuerying(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleCancelQuery = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsQuerying(false);
+      if (activeFile) {
+        const currentThread = chatThreads[activeFile.id] || [];
+        setChatThreads({
+          ...chatThreads,
+          [activeFile.id]: [
+            ...currentThread,
+            {
+              role: 'model',
+              content: "Query compilation process aborted by user.",
+              explanation: "Execution cancelled.",
+              isError: true
+            }
+          ]
+        });
+      }
+    }
+  };
+
+  const handleReloadHistoryItem = async (hist: any) => {
+    const matchedFile = files.find(f => f.id === hist.file_id);
+    if (!matchedFile) return;
+
+    if (!activeFile || activeFile.id !== hist.file_id) {
+      setActiveFile(matchedFile);
+    }
+
+    const currentFileId = hist.file_id;
+    const userQuery = hist.question;
+    const sqlToRun = hist.sql_query;
+
+    const tempModelMsg: ChatMessage = {
+      role: 'model',
+      content: "Reloading analytical results from database sandbox...",
+      sql_query: sqlToRun,
+      explanation: "Running query...",
+      isLoading: true
+    };
+
+    const currentThread = chatThreads[currentFileId] || [];
+    setChatThreads({
+      ...chatThreads,
+      [currentFileId]: [...currentThread, { role: 'user', content: userQuery }, tempModelMsg]
+    });
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/query`, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          file_id: currentFileId,
+          natural_language_query: sqlToRun
+        })
+      });
+
+      if (!checkAuthResponse(response)) return;
+
+      if (!response.ok) {
+        throw new Error("Failed to reload data");
+      }
+
+      const result = await response.json();
+      
+      const finalModelMsg: ChatMessage = {
+        role: 'model',
+        content: hist.explanation,
+        sql_query: sqlToRun,
+        explanation: hist.explanation,
+        data: result.data,
+        visualization_config: result.visualization_config || hist.visualization_config,
+        source_file: matchedFile.file_name
+      };
+
+      setChatThreads(prev => ({
+        ...prev,
+        [currentFileId]: [
+          ...(prev[currentFileId] || []).slice(0, -1),
+          finalModelMsg
+        ]
+      }));
+    } catch (err) {
+      const finalModelMsg: ChatMessage = {
+        role: 'model',
+        content: hist.explanation,
+        sql_query: sqlToRun,
+        explanation: hist.explanation,
+        data: [],
+        visualization_config: hist.visualization_config,
+        source_file: matchedFile.file_name
+      };
+      setChatThreads(prev => ({
+        ...prev,
+        [currentFileId]: [
+          ...(prev[currentFileId] || []).slice(0, -1),
+          finalModelMsg
+        ]
+      }));
     }
   };
 
@@ -979,6 +1096,8 @@ export default function AnalyticsDashboard() {
             setShowOnboarding={setShowOnboarding}
             handleFileUpload={handleFileUpload}
             isUploading={isUploading}
+            onCancelQuery={handleCancelQuery}
+            onReloadHistoryItem={handleReloadHistoryItem}
           />
         )}
 

@@ -13,6 +13,32 @@ import {
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
 
+const downloadDummyCSV = () => {
+  const csvHeaders = "Order ID,Order Date,Category,Product,Sales,Quantity,Discount,Profit,Region,Segment";
+  const csvRows = [
+    "CA-2026-152156,2026-05-01,Furniture,Chairs,261.96,2,0.00,41.91,South,Consumer",
+    "CA-2026-152156,2026-05-02,Furniture,Bookcases,731.94,3,0.00,219.58,South,Consumer",
+    "CA-2026-138688,2026-05-03,Office Supplies,Labels,14.62,2,0.00,6.87,West,Corporate",
+    "US-2026-108966,2026-05-11,Furniture,Tables,957.57,5,0.45,-383.03,South,Consumer",
+    "US-2026-108966,2026-05-12,Office Supplies,Storage,22.368,2,0.20,2.5164,South,Consumer",
+    "CA-2026-115812,2026-05-13,Furniture,Art,48.86,7,0.00,14.1694,West,Consumer",
+    "CA-2026-115812,2026-05-14,Office Supplies,Phones,7.28,4,0.00,1.9656,West,Consumer",
+    "CA-2026-115812,2026-05-15,Office Supplies,Binders,907.152,6,0.20,90.7152,West,Consumer",
+    "CA-2026-115812,2026-05-16,Office Supplies,Appliances,18.504,3,0.20,5.7825,West,Consumer",
+    "CA-2026-115812,2026-05-17,Office Supplies,Paper,114.90,5,0.00,34.47,West,Consumer"
+  ];
+  const csvContent = [csvHeaders, ...csvRows].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "sample_sales_data.csv");
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 interface PlaygroundProps {
   activeFile: any;
   chatThreads: { [key: string]: any[] };
@@ -35,6 +61,8 @@ interface PlaygroundProps {
   setShowOnboarding?: (show: boolean) => void;
   handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading?: boolean;
+  onCancelQuery?: () => void;
+  onReloadHistoryItem?: (hist: any) => void;
 }
 
 export default function Playground({
@@ -58,7 +86,9 @@ export default function Playground({
   handleThemeChange,
   setShowOnboarding,
   handleFileUpload,
-  isUploading
+  isUploading,
+  onCancelQuery,
+  onReloadHistoryItem
 }: PlaygroundProps) {
   const [isListening, setIsListening] = React.useState(false);
   const [queryMode, setQueryMode] = React.useState<'nl' | 'sql'>('nl');
@@ -405,14 +435,24 @@ export default function Playground({
                   </p>
                 </div>
                 {handleFileUpload && (
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-xl p-5 cursor-pointer bg-slate-50/50 transition-colors group">
-                    <Upload className="h-6 w-6 text-slate-400 group-hover:text-indigo-600 mb-2 transition-colors" />
-                    <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
-                      {isUploading ? "Processing schema Ingestion..." : "Select CSV Dataset"}
-                    </span>
-                    <span className="text-[9px] text-slate-405 mt-1">Accepts schemas up to 10MB</span>
-                    <input type="file" accept=".csv" onChange={handleFileUpload} disabled={isUploading} className="hidden" />
-                  </label>
+                  <div className="space-y-3">
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-xl p-5 cursor-pointer bg-slate-50/50 transition-colors group">
+                      <Upload className="h-6 w-6 text-slate-400 group-hover:text-indigo-600 mb-2 transition-colors" />
+                      <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
+                        {isUploading ? "Processing schema Ingestion..." : "Select CSV Dataset"}
+                      </span>
+                      <span className="text-[9px] text-slate-405 mt-1">Accepts schemas up to 10MB</span>
+                      <input type="file" accept=".csv" onChange={handleFileUpload} disabled={isUploading} className="hidden" />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={downloadDummyCSV}
+                      className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 hover:bg-indigo-100/80 px-3.5 py-2 rounded-xl transition-all border border-indigo-100 w-full justify-center shadow-sm"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download Sample CSV to Test
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -746,13 +786,26 @@ export default function Playground({
                 disabled={isQuerying}
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 bg-slate-50/50 text-xs placeholder:text-slate-400 font-semibold"
               />
-              <button
-                type="submit"
-                disabled={isQuerying || !nlQuery.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-indigo-600/10"
-              >
-                {isQuerying ? "Executing..." : <><span>{queryMode === 'nl' ? "Run Query" : "Run SQL"}</span><Play className="h-3.5 w-3.5 fill-current" /></>}
-              </button>
+              {isQuerying ? (
+                <button
+                  type="button"
+                  onClick={onCancelQuery}
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-rose-600/10 cursor-pointer animate-pulse"
+                  title="Force cancel execution"
+                >
+                  <span>Cancel Query</span>
+                  <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!nlQuery.trim()}
+                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-indigo-600/10"
+                >
+                  <span>{queryMode === 'nl' ? "Run Query" : "Run SQL"}</span>
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                </button>
+              )}
             </form>
           </div>
         )}
@@ -766,6 +819,16 @@ export default function Playground({
         </div>
 
         <div className="p-4 divide-y divide-slate-100">
+          {isQuerying && (
+            <div className="w-full text-left py-3 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-start space-x-2 text-xs font-semibold animate-pulse mb-3 p-2">
+              <RefreshCw className="h-4 w-4 text-indigo-500 animate-spin shrink-0 mt-0.5" />
+              <div className="space-y-1 overflow-hidden w-full">
+                <p className="text-slate-700 font-bold leading-relaxed truncate">Executing AI compiler...</p>
+                <code className="text-[10px] text-slate-400 font-mono block truncate">Analyzing schema...</code>
+                <span className="text-[9px] text-indigo-500 block font-bold">In progress...</span>
+              </div>
+            </div>
+          )}
           {queryHistory.length === 0 ? (
             <p className="text-xs text-slate-400 font-medium text-center py-8">No queries executed yet.</p>
           ) : (
@@ -773,46 +836,50 @@ export default function Playground({
               <button
                 key={hIdx}
                 onClick={() => {
-                  // Optimistically re-add to chat conversation panel
-                  if (activeFile && hist.file_id === activeFile.id) {
-                    const currentThread = chatThreads[activeFile.id] || [];
-                    setChatThreads({
-                      ...chatThreads,
-                      [activeFile.id]: [
-                        ...currentThread,
-                        { role: 'user', content: hist.question },
-                        {
-                          role: 'model',
-                          content: hist.explanation,
-                          sql_query: hist.sql_query,
-                          explanation: hist.explanation,
-                          data: [], // we skip data records reload for memory footprint
-                          visualization_config: hist.visualization_config,
-                          source_file: activeFile.file_name
-                        }
-                      ]
-                    });
+                  if (onReloadHistoryItem) {
+                    onReloadHistoryItem(hist);
                   } else {
-                    // Change active file first if different
-                    const matchedFile = files.find(f => f.id === hist.file_id);
-                    if (matchedFile) {
-                      setActiveFile(matchedFile);
+                    // Optimistically re-add to chat conversation panel
+                    if (activeFile && hist.file_id === activeFile.id) {
+                      const currentThread = chatThreads[activeFile.id] || [];
                       setChatThreads({
                         ...chatThreads,
-                        [hist.file_id]: [
-                          ...(chatThreads[hist.file_id] || []),
+                        [activeFile.id]: [
+                          ...currentThread,
                           { role: 'user', content: hist.question },
                           {
                             role: 'model',
                             content: hist.explanation,
                             sql_query: hist.sql_query,
                             explanation: hist.explanation,
-                            data: [],
+                            data: [], // we skip data records reload for memory footprint
                             visualization_config: hist.visualization_config,
-                            source_file: matchedFile.file_name
+                            source_file: activeFile.file_name
                           }
                         ]
                       });
+                    } else {
+                      // Change active file first if different
+                      const matchedFile = files.find(f => f.id === hist.file_id);
+                      if (matchedFile) {
+                        setActiveFile(matchedFile);
+                        setChatThreads({
+                          ...chatThreads,
+                          [hist.file_id]: [
+                            ...(chatThreads[hist.file_id] || []),
+                            { role: 'user', content: hist.question },
+                            {
+                              role: 'model',
+                              content: hist.explanation,
+                              sql_query: hist.sql_query,
+                              explanation: hist.explanation,
+                              data: [],
+                              visualization_config: hist.visualization_config,
+                              source_file: matchedFile.file_name
+                            }
+                          ]
+                        });
+                      }
                     }
                   }
                 }}
