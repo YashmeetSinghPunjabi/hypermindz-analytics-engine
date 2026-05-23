@@ -1,14 +1,15 @@
 import React from 'react';
-import { Database, BarChart3, MessageSquare, FileSpreadsheet, Settings, User, LogOut } from 'lucide-react';
+import { Database, BarChart3, MessageSquare, FileSpreadsheet, Settings, User, LogOut, HelpCircle } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: 'dashboard' | 'catalog' | 'settings' | 'playground';
   setActiveTab: (tab: 'dashboard' | 'catalog' | 'settings' | 'playground') => void;
   email: string;
   handleSignOut: () => void;
+  setShowOnboarding?: (show: boolean) => void;
 }
 
-export default function Sidebar({ activeTab, setActiveTab, email, handleSignOut }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, email, handleSignOut, setShowOnboarding }: SidebarProps) {
   return (
     <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 text-slate-800 flex flex-col shrink-0 z-20 shadow-sm relative">
       <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between md:justify-start space-x-3">
@@ -67,6 +68,16 @@ export default function Sidebar({ activeTab, setActiveTab, email, handleSignOut 
           <Settings className="h-4 w-4" />
           <span>Settings</span>
         </button>
+
+        {setShowOnboarding && (
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span>User Guide</span>
+          </button>
+        )}
       </nav>
 
       {/* Mobile Nav Header (Horizontal quick links) */}

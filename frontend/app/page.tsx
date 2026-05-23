@@ -116,7 +116,7 @@ export default function AnalyticsDashboard() {
       setEmail(savedEmail);
       setUserId(savedUserId);
       
-      const hasOnboarded = localStorage.getItem("hm_onboarding_completed");
+      const hasOnboarded = localStorage.getItem(`hm_onboarding_completed_${savedUserId}`) || localStorage.getItem("hm_onboarding_completed");
       if (!hasOnboarded) {
         setShowOnboarding(true);
       }
@@ -216,6 +216,11 @@ export default function AnalyticsDashboard() {
       setToken(result.access_token);
       setEmail(result.email);
       setUserId(result.user_id);
+
+      const hasOnboarded = localStorage.getItem(`hm_onboarding_completed_${result.user_id}`) || localStorage.getItem("hm_onboarding_completed");
+      if (!hasOnboarded) {
+        setShowOnboarding(true);
+      }
       
       const savedTheme = localStorage.getItem(`hm_theme_${result.user_id}`);
       if (savedTheme) {
@@ -417,7 +422,11 @@ export default function AnalyticsDashboard() {
   };
   
   const handleDismissOnboarding = () => {
-    localStorage.setItem("hm_onboarding_completed", "true");
+    if (userId) {
+      localStorage.setItem(`hm_onboarding_completed_${userId}`, "true");
+    } else {
+      localStorage.setItem("hm_onboarding_completed", "true");
+    }
     setShowOnboarding(false);
   };
 
@@ -679,6 +688,7 @@ export default function AnalyticsDashboard() {
         setActiveTab={setActiveTab}
         email={email}
         handleSignOut={handleSignOut}
+        setShowOnboarding={setShowOnboarding}
       />
 
       {/* Main Panel */}
@@ -710,6 +720,10 @@ export default function AnalyticsDashboard() {
               <div className="flex space-x-4 mt-4">
                 <button onClick={() => setActiveTab('catalog')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-500">Upload New Dataset</button>
                 <button onClick={() => setActiveTab('playground')} className="bg-white text-indigo-600 border border-indigo-200 px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-50">Open AI Terminal</button>
+                <button onClick={() => setShowOnboarding(true)} className="bg-white text-slate-700 border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 flex items-center gap-1.5">
+                  <HelpCircle className="h-3.5 w-3.5 text-slate-500" />
+                  View User Guide
+                </button>
               </div>
             </div>
           </div>
