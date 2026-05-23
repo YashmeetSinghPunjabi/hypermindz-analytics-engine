@@ -139,12 +139,12 @@ export default function DataCatalog({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {files.map((file) => (
+                 {files.map((file) => (
                   <tr
                     key={file.id}
                     onClick={() => {
                       setActiveFile(file);
-                      setActiveTab('dashboard');
+                      setActiveTab('playground');
                     }}
                     className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${activeFile?.id === file.id ? 'bg-indigo-50/20' : ''}`}
                   >
@@ -163,7 +163,7 @@ export default function DataCatalog({
                         <button
                           onClick={() => {
                             setActiveFile(file);
-                            setActiveTab('dashboard');
+                            setActiveTab('playground');
                           }}
                           className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors font-bold flex items-center gap-1 hover:text-indigo-800"
                           title="Open in Terminal Playground"

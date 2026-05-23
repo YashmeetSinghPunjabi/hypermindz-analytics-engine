@@ -977,6 +977,8 @@ export default function AnalyticsDashboard() {
             theme={theme}
             handleThemeChange={handleThemeChange}
             setShowOnboarding={setShowOnboarding}
+            handleFileUpload={handleFileUpload}
+            isUploading={isUploading}
           />
         )}
 
