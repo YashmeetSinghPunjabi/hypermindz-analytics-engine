@@ -66,6 +66,61 @@ def query_tabular_data(
     )
 
     try:
+        # Check if the query is a raw SQL query
+        query_stripped = payload.natural_language_query.strip().strip("`").replace("sql\n", "").strip()
+        upper_query = query_stripped.upper()
+        if upper_query.startswith("SELECT") or upper_query.startswith("WITH"):
+            sanitized_sql = SQLSecurityValidator.validate_query(query_stripped)
+            conn = sqlite3.connect(db_path)
+            df_result = pd.read_sql_query(sanitized_sql, conn)
+            conn.close()
+
+            viz_prompt = ChatPromptTemplate.from_messages([
+                ("system", 'Analyze this SQL query and recommend a UI chart. Return ONLY JSON matching this schema: {{"visualization_recommended": true/false, "chart_type": "bar"/"line"/"pie"/"none", "x_axis_key": "column_name_or_null", "y_axis_key": "column_name_or_null"}}'),
+                ("human", "SQL: {sql}\nQuestion: Custom Query")
+            ])
+            viz_chain = viz_prompt | llm | JsonOutputParser()
+            try:
+                viz_config = viz_chain.invoke({"sql": sanitized_sql})
+            except Exception:
+                viz_config = {"visualization_recommended": False, "chart_type": "none", "x_axis_key": None, "y_axis_key": None}
+
+            actual_cols = list(df_result.columns)
+            x_key = viz_config.get("x_axis_key")
+            y_key = viz_config.get("y_axis_key")
+            
+            if x_key not in actual_cols:
+                x_key = actual_cols[0] if actual_cols else None
+            if y_key not in actual_cols:
+                y_key = actual_cols[1] if len(actual_cols) > 1 else (actual_cols[0] if actual_cols else None)
+                
+            viz_cfg = {
+                "recommended": viz_config.get("visualization_recommended", False),
+                "type": viz_config.get("chart_type", "none"),
+                "x_axis_key": x_key,
+                "y_axis_key": y_key
+            }
+
+            db_manager.add_chat_message(user_id, payload.file_id, "user", payload.natural_language_query)
+            db_manager.add_chat_message(user_id, payload.file_id, "model", f"Executed direct SQL query.")
+            
+            db_manager.add_query_history(
+                user_id=user_id,
+                file_id=payload.file_id,
+                question=payload.natural_language_query,
+                sql_query=sanitized_sql,
+                explanation="Executed direct SQL query custom request.",
+                viz_config=viz_cfg
+            )
+
+            return QueryResultResponse(
+                sql_query=sanitized_sql,
+                explanation=f"Successfully executed raw SQL query: `{sanitized_sql}`",
+                visualization_config=viz_cfg,
+                data=df_result.replace({np.nan: None}).to_dict(orient="records"),
+                source_file=file_info["file_name"]
+            )
+
         chat_history = db_manager.get_chat_history(user_id, payload.file_id)
         history_str = "\n".join([f"{m['role']}: {m['content']}" for m in chat_history[-5:]])
 

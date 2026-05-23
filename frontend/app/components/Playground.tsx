@@ -7,7 +7,8 @@ import {
 } from 'recharts';
 import {
   Database, AlertCircle, Table, FileSpreadsheet,
-  RefreshCw, Sparkles, Play, History, ChevronRight, BarChart3, HelpCircle
+  RefreshCw, Sparkles, Play, History, ChevronRight, BarChart3, HelpCircle,
+  Mic, MicOff, Download, Code, Terminal
 } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
@@ -55,6 +56,75 @@ export default function Playground({
   handleThemeChange,
   setShowOnboarding
 }: PlaygroundProps) {
+  const [queryMode, setQueryMode] = React.useState<'nl' | 'sql'>('nl');
+  const [isListening, setIsListening] = React.useState(false);
+  const recognitionRef = React.useRef<any>(null);
+
+  const toggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Try Chrome or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (event: any) => {
+        const resultText = event.results[0][0].transcript;
+        if (resultText) {
+          setNlQuery(resultText);
+        }
+      };
+
+      rec.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+      rec.start();
+    }
+  };
+
+  const downloadCSV = (data: any[], filename: string) => {
+    if (!data || data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(','), // header row
+      ...data.map(row => 
+        headers.map(fieldName => {
+          const val = row[fieldName];
+          const stringVal = val === null || val === undefined ? '' : String(val);
+          return `"${stringVal.replace(/"/g, '""')}"`;
+        }).join(',')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvRows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Renders the Recharts visualization based on configs
   const renderMessageChart = (msg: any, msgIndex: number) => {
@@ -339,9 +409,18 @@ export default function Playground({
                       {/* Response Data Table Grid */}
                       {msg.data && msg.data.length > 0 && (
                         <div className="space-y-2 border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50 p-3">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                            <Table className="h-3.5 w-3.5 text-indigo-600" /> Result Dataset ({msg.data.length} rows)
-                          </span>
+                          <div className="flex justify-between items-center pb-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                              <Table className="h-3.5 w-3.5 text-indigo-600" /> Result Dataset ({msg.data.length} rows)
+                            </span>
+                            <button
+                              onClick={() => downloadCSV(msg.data, `${activeFile ? activeFile.file_name.replace('.csv', '') : 'query'}_result_${index}.csv`)}
+                              className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/85 border border-indigo-100 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                              title="Export findings to CSV spreadsheet"
+                            >
+                              <Download className="h-3 w-3" /> Export CSV
+                            </button>
+                          </div>
                           <div className="overflow-x-auto border border-slate-100 rounded-lg max-h-60 bg-white">
                             <table className="w-full text-left border-collapse text-[11px]">
                               <thead>
@@ -409,35 +488,99 @@ export default function Playground({
         {/* Chat Input Console Form */}
         {activeFile && (
           <div className="p-6 bg-white border-t border-slate-200 space-y-4">
-            {/* Suggested questions box */}
-            <div className="flex items-start space-x-2">
-              <Sparkles className="h-4 w-4 text-indigo-500 shrink-0 mt-0.5" />
-              <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
-                {dynamicSuggestions.map((q, qIdx) => (
-                  <button
-                    key={qIdx}
-                    onClick={() => handleSendQuery(q.text)}
-                    disabled={isQuerying}
-                    className="bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-100 text-[10px] font-bold text-indigo-600 px-2.5 py-1 rounded-full transition-all"
-                  >
-                    {q.text}
-                  </button>
-                ))}
+            
+            {/* Input Mode Toggle & Voice Indicator */}
+            <div className="flex items-center justify-between">
+              {/* Segmented Mode Button */}
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQueryMode('nl');
+                    setNlQuery('');
+                  }}
+                  className={`text-[9px] font-bold px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${queryMode === 'nl'
+                      ? 'bg-white text-indigo-700 shadow-sm border border-slate-200'
+                      : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                >
+                  <Terminal className="h-3 w-3" />
+                  AI Natural Language
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQueryMode('sql');
+                    // Pre-fill active file query if empty
+                    if (!nlQuery.trim() && activeFile) {
+                      setNlQuery(`SELECT * FROM ${activeFile.table_name} LIMIT 5;`);
+                    }
+                  }}
+                  className={`text-[9px] font-bold px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${queryMode === 'sql'
+                      ? 'bg-white text-indigo-700 shadow-sm border border-slate-200'
+                      : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                >
+                  <Code className="h-3 w-3" />
+                  Direct SQL Query
+                </button>
               </div>
+
+              {/* Suggestions text or raw schema hint */}
+              {activeFile && (
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                  Schema: {activeFile.columns.slice(0, 5).join(', ')}
+                  {activeFile.columns.length > 5 && ' ...'}
+                </span>
+              )}
             </div>
 
+            {/* Suggested questions box */}
+            {queryMode === 'nl' && (
+              <div className="flex items-start space-x-2">
+                <Sparkles className="h-4 w-4 text-indigo-500 shrink-0 mt-0.5" />
+                <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+                  {dynamicSuggestions.map((q, qIdx) => (
+                    <button
+                      key={qIdx}
+                      onClick={() => handleSendQuery(q.text)}
+                      disabled={isQuerying}
+                      className="bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-100 text-[10px] font-bold text-indigo-600 px-2.5 py-1 rounded-full transition-all"
+                    >
+                      {q.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+ 
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendQuery(nlQuery);
               }}
-              className="flex gap-3"
+              className="flex gap-3 items-center"
             >
+              {queryMode === 'nl' && (
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`p-3 rounded-xl border transition-all shadow-sm ${isListening 
+                    ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse' 
+                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-800'}`}
+                  title={isListening ? "Listening... click to stop" : "Start speaking question"}
+                >
+                  {isListening ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
+                </button>
+              )}
+
               <input
                 type="text"
                 value={nlQuery}
                 onChange={(e) => setNlQuery(e.target.value)}
-                placeholder="e.g. 'What is the sum of revenue for Q1 by region?'"
+                placeholder={queryMode === 'nl' 
+                  ? "e.g. 'What is the sum of revenue for Q1 by region?'" 
+                  : `e.g. SELECT * FROM ${activeFile ? activeFile.table_name : 'table'} LIMIT 10;`}
                 disabled={isQuerying}
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 bg-slate-50/50 text-xs placeholder:text-slate-400 font-semibold"
               />
@@ -446,7 +589,7 @@ export default function Playground({
                 disabled={isQuerying || !nlQuery.trim()}
                 className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-indigo-600/10"
               >
-                {isQuerying ? "Compiling..." : <><span>Run Query</span><Play className="h-3.5 w-3.5 fill-current" /></>}
+                {isQuerying ? "Executing..." : <><span>{queryMode === 'nl' ? "Run Query" : "Run SQL"}</span><Play className="h-3.5 w-3.5 fill-current" /></>}
               </button>
             </form>
           </div>

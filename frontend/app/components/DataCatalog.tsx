@@ -21,6 +21,7 @@ interface DataCatalogProps {
   uploadError: string | null;
   handleFileUpload: (e: any) => void;
   setShowOnboarding?: (show: boolean) => void;
+  onPrefillQuery?: (query: string) => void;
 }
 
 export default function DataCatalog({
@@ -42,7 +43,8 @@ export default function DataCatalog({
   isUploading,
   uploadError,
   handleFileUpload,
-  setShowOnboarding
+  setShowOnboarding,
+  onPrefillQuery
 }: DataCatalogProps) {
   // Auto-scroll refs
   const previewRef = React.useRef<HTMLDivElement>(null);
@@ -268,7 +270,24 @@ export default function DataCatalog({
                 <div key={cIdx} className="border border-slate-150 rounded-2xl p-4 bg-slate-50/30 flex flex-col justify-between space-y-3 hover:shadow-md transition-all">
                   <div className="space-y-1">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                      <span className="font-bold text-slate-800 text-xs truncate max-w-[150px]">{col.name}</span>
+                      {onPrefillQuery ? (
+                        <button
+                          onClick={() => {
+                            setActiveFile(profilingFileItem);
+                            const prompt = col.type === 'numeric'
+                              ? `What is the average, min, and max value of ${col.name}?`
+                              : `Show the count and percentage distribution of ${col.name}`;
+                            onPrefillQuery(prompt);
+                          }}
+                          className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-xs truncate max-w-[150px] text-left flex items-center gap-1"
+                          title={`Click to query ${col.name} instantly`}
+                        >
+                          <Sparkles className="h-3 w-3 shrink-0 text-indigo-500" />
+                          <span>{col.name}</span>
+                        </button>
+                      ) : (
+                        <span className="font-bold text-slate-800 text-xs truncate max-w-[150px]">{col.name}</span>
+                      )}
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${col.type === 'numeric' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                         }`}>{col.type}</span>
                     </div>

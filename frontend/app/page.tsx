@@ -862,6 +862,10 @@ export default function AnalyticsDashboard() {
             uploadError={uploadError}
             handleFileUpload={handleFileUpload}
             setShowOnboarding={setShowOnboarding}
+            onPrefillQuery={(query) => {
+              setNlQuery(query);
+              setActiveTab('playground');
+            }}
           />
         )}
 
