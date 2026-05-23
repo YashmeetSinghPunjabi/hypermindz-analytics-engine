@@ -195,7 +195,7 @@ Open [http://localhost:3000](http://localhost:3000) in your web browser.
 ## ✍️ AI-Assisted Development Reflections
 
 ### 1. AI Tools Utilized
-During this project, we leveraged Gemini/Claude coding assistance to scaffold endpoints, write React boilerplate, and design CSS transition states.
+During this project, we leveraged Gemini/Antigravity IDE coding assistance to scaffold endpoints, write React boilerplate, and design CSS transition states.
 
 ### 2. Examples of Effective AI Assistance
 - **Next.js Recharts Layout**: AI assisted in configuring responsive containers and correctly matching object keys to chart coordinates.
