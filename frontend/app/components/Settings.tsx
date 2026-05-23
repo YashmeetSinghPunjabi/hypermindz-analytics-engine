@@ -8,6 +8,7 @@ interface SettingsProps {
   handleCompactToggle: () => void;
   handleReSeedData: () => void;
   handleSignOut: () => void;
+  setShowOnboarding?: (show: boolean) => void;
 }
 
 export default function SettingsTab({
@@ -16,11 +17,31 @@ export default function SettingsTab({
   handleThemeChange,
   handleCompactToggle,
   handleReSeedData,
-  handleSignOut
+  handleSignOut,
+  setShowOnboarding
 }: SettingsProps) {
   return (
     <div className={`${isCompact ? 'p-4' : 'p-8'} max-w-2xl space-y-6 flex-1`}>
       <h1 className="text-2xl font-black text-slate-800 mb-6">User Settings</h1>
+
+      {/* Sleek User Guide Banner */}
+      <div className="bg-gradient-to-r from-slate-500 to-slate-700 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1 z-10">
+          <h3 className="text-sm font-bold flex items-center gap-2"><Settings className="h-4.5 w-4.5" /> Quick Guide: Settings</h3>
+          <p className="text-xs text-slate-200 font-medium">
+            Configure application-wide preferences. Customize theme settings, toggle compact layouts, re-seed sample datasets, or log out of your session safely.
+          </p>
+        </div>
+        {setShowOnboarding && (
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0"
+          >
+            Launch Full Guide
+          </button>
+        )}
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+      </div>
 
       {/* UI Customization */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">

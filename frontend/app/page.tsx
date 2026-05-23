@@ -154,7 +154,14 @@ export default function AnalyticsDashboard() {
       fetch(`${API_BASE}/files/${activeFile.id}/suggestions`, {
         headers: { "Authorization": `Bearer ${token}` }
       })
-        .then(res => res.ok ? res.json() : { suggestions: [] })
+        .then(res => {
+          if (res.status === 401) {
+            handleSignOut();
+            alert("Session expired. You logged in from another device.");
+            throw new Error("Session expired");
+          }
+          return res.ok ? res.json() : { suggestions: [] };
+        })
         .then(data => setDynamicSuggestions(data.suggestions))
         .catch(() => setDynamicSuggestions([]));
     }
@@ -259,12 +266,22 @@ export default function AnalyticsDashboard() {
     setTheme('light');
   };
 
+  const checkAuthResponse = (res: Response) => {
+    if (res.status === 401) {
+      handleSignOut();
+      alert("Session expired. You logged in from another device.");
+      return false;
+    }
+    return true;
+  };
+
   const fetchFilesList = async () => {
     if (!token) return;
     try {
       const response = await fetch(`${API_BASE}/files`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
+      if (!checkAuthResponse(response)) return;
       if (response.ok) {
         const data = await response.json();
         setFiles(data);
@@ -284,6 +301,7 @@ export default function AnalyticsDashboard() {
       const response = await fetch(`${API_BASE}/history`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
+      if (!checkAuthResponse(response)) return;
       if (response.ok) {
         const data = await response.json();
         setQueryHistory(data);
@@ -309,6 +327,8 @@ export default function AnalyticsDashboard() {
         headers: { "Authorization": `Bearer ${token}` },
         body: formData,
       });
+
+      if (!checkAuthResponse(response)) return;
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -346,6 +366,8 @@ export default function AnalyticsDashboard() {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
+      if (!checkAuthResponse(response)) return;
+
       if (response.ok) {
         setFiles(files.filter(f => f.id !== fileId));
         if (activeFile?.id === fileId) {
@@ -373,6 +395,7 @@ export default function AnalyticsDashboard() {
       const response = await fetch(`${API_BASE}/files/${fileItem.id}/preview`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
+      if (!checkAuthResponse(response)) return;
       if (response.ok) {
         const result = await response.json();
         setPreviewRows(result.preview_data);
@@ -393,6 +416,7 @@ export default function AnalyticsDashboard() {
       const response = await fetch(`${API_BASE}/files/${fileItem.id}/profile`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
+      if (!checkAuthResponse(response)) return;
       if (response.ok) {
         const result = await response.json();
         setColumnProfiles(result);
@@ -465,6 +489,8 @@ export default function AnalyticsDashboard() {
         })
       });
 
+      if (!checkAuthResponse(response)) return;
+
       const updatedThread = [...(chatThreads[currentFileId] || []), newUserMessage];
 
       if (!response.ok) {
@@ -516,6 +542,7 @@ export default function AnalyticsDashboard() {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
+      if (!checkAuthResponse(response)) return;
       if (response.ok) {
         setChatThreads({
           ...chatThreads,
@@ -694,11 +721,70 @@ export default function AnalyticsDashboard() {
       {/* Main Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
 
+        {activeTab !== 'playground' && (
+          <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm shrink-0">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-sm font-bold text-slate-800 capitalize tracking-wide flex items-center gap-1.5">
+                <span>HyperMindZ Console</span>
+                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-semibold">{activeTab}</span>
+              </h2>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {/* Theme Toggle Switcher */}
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange('light')}
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${theme === 'light' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  Light
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange('dark')}
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${theme === 'dark' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange('system')}
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${theme === 'system' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  System
+                </button>
+              </div>
+              
+              {/* Quick Help Button */}
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="p-2 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-xl transition-colors border border-slate-200 bg-slate-50 shadow-sm"
+                title="Open User Guide"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
+            </div>
+          </header>
+        )}
+
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className={`${isCompact ? 'p-4' : 'p-8'} max-w-5xl space-y-6 flex-1`}>
             <h1 className="text-2xl font-black text-slate-800">Workspace Dashboard</h1>
             <p className="text-sm text-slate-500 font-medium">Welcome back! Here is an overview of your data sandboxes.</p>
+
+            {/* Sleek User Guide Banner */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="space-y-1 z-10">
+                <h3 className="text-base font-bold flex items-center gap-2"><Sparkles className="h-5 w-5" /> Quick Guide: Dashboard</h3>
+                <p className="text-xs text-indigo-100 font-medium max-w-xl">Monitor your workspace metrics at a glance. Select active datasets to start running AI queries instantly, or manage your catalog from the sidebar.</p>
+              </div>
+              <button onClick={() => setShowOnboarding(true)} className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0">
+                Launch Full Guide
+              </button>
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
@@ -748,6 +834,9 @@ export default function AnalyticsDashboard() {
             setSelectedChartOverride={setSelectedChartOverride}
             setActiveTab={setActiveTab}
             chatEndRef={chatEndRef}
+            theme={theme}
+            handleThemeChange={handleThemeChange}
+            setShowOnboarding={setShowOnboarding}
           />
         )}
 
@@ -772,6 +861,7 @@ export default function AnalyticsDashboard() {
             isUploading={isUploading}
             uploadError={uploadError}
             handleFileUpload={handleFileUpload}
+            setShowOnboarding={setShowOnboarding}
           />
         )}
 
@@ -784,6 +874,7 @@ export default function AnalyticsDashboard() {
             handleCompactToggle={handleCompactToggle}
             handleReSeedData={handleReSeedData}
             handleSignOut={handleSignOut}
+            setShowOnboarding={setShowOnboarding}
           />
         )}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, FileSpreadsheet, Eye, BarChart3, Trash2, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, Eye, BarChart3, Trash2, AlertCircle, Sparkles, HelpCircle } from 'lucide-react';
 
 interface DataCatalogProps {
   files: any[];
@@ -20,6 +20,7 @@ interface DataCatalogProps {
   isUploading: boolean;
   uploadError: string | null;
   handleFileUpload: (e: any) => void;
+  setShowOnboarding?: (show: boolean) => void;
 }
 
 export default function DataCatalog({
@@ -40,10 +41,46 @@ export default function DataCatalog({
   columnProfiles,
   isUploading,
   uploadError,
-  handleFileUpload
+  handleFileUpload,
+  setShowOnboarding
 }: DataCatalogProps) {
+  // Auto-scroll refs
+  const previewRef = React.useRef<HTMLDivElement>(null);
+  const profilingRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (previewFileItem && !previewLoading && previewRef.current) {
+      previewRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [previewFileItem, previewLoading]);
+
+  React.useEffect(() => {
+    if (profilingFileItem && !profilingLoading && profilingRef.current) {
+      profilingRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [profilingFileItem, profilingLoading]);
+
   return (
     <div className="p-8 space-y-8 flex-1">
+      {/* Sleek User Guide Banner */}
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1 z-10">
+          <h3 className="text-sm font-bold flex items-center gap-2"><Sparkles className="h-4.5 w-4.5" /> Quick Guide: Data Catalog</h3>
+          <p className="text-xs text-indigo-100 font-medium max-w-xl">
+            Upload tabular CSV files to ingest them into your database sandbox. Once registered, click the eye icon to preview the table, or the bar chart icon to profile columns and display statistical insights.
+          </p>
+        </div>
+        {setShowOnboarding && (
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0"
+          >
+            Launch Full Guide
+          </button>
+        )}
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+      </div>
+
       {/* File Dropzone Card */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
@@ -164,7 +201,7 @@ export default function DataCatalog({
 
       {/* Quick Preview Table Draw Mode */}
       {previewFileItem && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+        <div ref={previewRef} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
               <Eye className="h-4.5 w-4.5 text-indigo-500" /> Data Preview: {previewFileItem.file_name} (First 20 rows)
@@ -210,7 +247,7 @@ export default function DataCatalog({
 
       {/* Column Profiling Summary Statistics Draw Mode */}
       {profilingFileItem && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+        <div ref={profilingRef} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
               <BarChart3 className="h-4.5 w-4.5 text-indigo-500" /> Data Profiling Summary: {profilingFileItem.file_name}

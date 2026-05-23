@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import {
   Database, AlertCircle, Table, FileSpreadsheet,
-  RefreshCw, Sparkles, Play, History, ChevronRight, BarChart3
+  RefreshCw, Sparkles, Play, History, ChevronRight, BarChart3, HelpCircle
 } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
@@ -29,6 +29,9 @@ interface PlaygroundProps {
   setSelectedChartOverride: (override: any) => void;
   setActiveTab: (tab: any) => void;
   chatEndRef: React.RefObject<HTMLDivElement | null>;
+  theme?: string;
+  handleThemeChange?: (theme: 'light' | 'dark' | 'system') => void;
+  setShowOnboarding?: (show: boolean) => void;
 }
 
 export default function Playground({
@@ -47,7 +50,10 @@ export default function Playground({
   selectedChartOverride,
   setSelectedChartOverride,
   setActiveTab,
-  chatEndRef
+  chatEndRef,
+  theme,
+  handleThemeChange,
+  setShowOnboarding
 }: PlaygroundProps) {
 
   // Renders the Recharts visualization based on configs
@@ -185,16 +191,45 @@ export default function Playground({
             )}
           </div>
 
-          {activeFile && (
-            <button
-              onClick={handleClearHistory}
-              className="text-[10px] font-bold text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200/70 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors flex items-center gap-1"
-              title="Clear chat context memory"
-            >
-              <RefreshCw className="h-3 w-3" />
-              Reset Chat Context
-            </button>
-          )}
+          <div className="flex items-center space-x-4">
+            {activeFile && (
+              <button
+                onClick={handleClearHistory}
+                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200/70 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors flex items-center gap-1"
+                title="Clear chat context memory"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Reset Chat Context
+              </button>
+            )}
+
+            {/* Theme Toggle (Playground Header) */}
+            {handleThemeChange && theme && (
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
+                {['light', 'dark', 'system'].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => handleThemeChange(t as any)}
+                    className={`px-2 py-1 text-[9px] font-bold rounded-md capitalize transition-all ${theme === t ? 'bg-white text-indigo-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Help Guide Button */}
+            {setShowOnboarding && (
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-lg transition-colors border border-slate-200 bg-slate-50 shadow-sm"
+                title="Open User Guide"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Chat Speech Area */}
@@ -215,19 +250,40 @@ export default function Playground({
                 Open Data Catalog
               </button>
             </div>
-          ) : (chatThreads[activeFile.id] || []).length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-              <div className="bg-indigo-50 p-4 rounded-3xl text-indigo-500 border border-indigo-100">
-                <Sparkles className="h-8 w-8" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-800">Explore {activeFile.file_name}</h3>
-                <p className="text-xs text-slate-400 max-w-md mt-1">Ask questions in plain English. The AI engine will translate them into secure SQL queries and render tables, charts, or text insights.</p>
-              </div>
-            </div>
           ) : (
-            (chatThreads[activeFile.id] || []).map((msg, index) => (
-              <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <>
+              {/* Sleek User Guide Banner for Playground */}
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="space-y-1 z-10">
+                  <h3 className="text-sm font-bold flex items-center gap-2"><Sparkles className="h-4.5 w-4.5" /> Quick Guide: AI Playground</h3>
+                  <p className="text-xs text-emerald-100 font-medium max-w-xl">
+                    Ask analytical questions about your active dataset in plain English. The AI compiler will translate it into a SQL query, fetch the matching records, and dynamically render data tables or visual charts.
+                  </p>
+                </div>
+                {setShowOnboarding && (
+                  <button
+                    onClick={() => setShowOnboarding(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0"
+                  >
+                    Launch Full Guide
+                  </button>
+                )}
+                <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+              </div>
+
+              {(chatThreads[activeFile.id] || []).length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="bg-indigo-50 p-4 rounded-3xl text-indigo-500 border border-indigo-100">
+                    <Sparkles className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">Explore {activeFile.file_name}</h3>
+                    <p className="text-xs text-slate-400 max-w-md mt-1 font-semibold">Start querying below by typing your natural language question or selecting a suggestion.</p>
+                  </div>
+                </div>
+              ) : (
+                (chatThreads[activeFile.id] || []).map((msg, index) => (
+                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`w-full md:max-w-3xl space-y-2 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md md:w-auto max-w-[90%]' : ''}`}>
 
                   {/* User Chat Bubble */}
@@ -328,6 +384,8 @@ export default function Playground({
               </div>
             ))
           )}
+        </>
+      )}
 
           {/* Query loading skeleton */}
           {isQuerying && (
