@@ -62,6 +62,7 @@ interface ChatMessage {
   };
   source_file?: string;
   isError?: boolean;
+  isLoading?: boolean;
 }
 
 export default function AnalyticsDashboard() {
