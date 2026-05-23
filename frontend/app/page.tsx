@@ -125,14 +125,16 @@ export default function AnalyticsDashboard() {
       setApiBaseUrl(savedApiBase);
     }
 
-    const savedTheme = localStorage.getItem("hm_theme") as any;
+    const savedTheme = localStorage.getItem(`hm_theme_${savedUserId || ""}`);
     if (savedTheme) {
-      setTheme(savedTheme);
+      setTheme(savedTheme as any);
       if (savedTheme === 'dark') document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
 
-    const savedCompact = localStorage.getItem("hm_compact");
+    const savedCompact = localStorage.getItem(`hm_compact_${savedUserId || ""}`);
     if (savedCompact === 'true') {
       setIsCompact(true);
     }
@@ -158,14 +160,16 @@ export default function AnalyticsDashboard() {
     }
   }, [activeFile, token, API_BASE]);
 
-  // Scroll to bottom of chat when messages change
+  // Scroll to bottom of chat when messages change or loading state changes
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatThreads, activeFile]);
+    setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+  }, [chatThreads, activeFile, isQuerying]);
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
-    localStorage.setItem("hm_theme", newTheme);
+    localStorage.setItem(`hm_theme_${userId}`, newTheme);
     if (newTheme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   };
@@ -173,7 +177,7 @@ export default function AnalyticsDashboard() {
   const handleCompactToggle = () => {
     const newVal = !isCompact;
     setIsCompact(newVal);
-    localStorage.setItem("hm_compact", String(newVal));
+    localStorage.setItem(`hm_compact_${userId}`, String(newVal));
   };
 
   // --- Auth Handlers ---
@@ -212,6 +216,20 @@ export default function AnalyticsDashboard() {
       setToken(result.access_token);
       setEmail(result.email);
       setUserId(result.user_id);
+      
+      const savedTheme = localStorage.getItem(`hm_theme_${result.user_id}`);
+      if (savedTheme) {
+        setTheme(savedTheme as any);
+        if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      } else {
+        setTheme('light');
+        document.documentElement.classList.remove('dark');
+      }
+
+      const savedCompact = localStorage.getItem(`hm_compact_${result.user_id}`);
+      setIsCompact(savedCompact === 'true');
+
       setAuthPassword("");
       setAuthEmail("");
     } catch (err: any) {
@@ -232,6 +250,8 @@ export default function AnalyticsDashboard() {
     setActiveFile(null);
     setChatThreads({});
     setQueryHistory([]);
+    document.documentElement.classList.remove('dark');
+    setTheme('light');
   };
 
   const fetchFilesList = async () => {
