@@ -8,7 +8,6 @@ from unittest.mock import patch, MagicMock
 # Set test database path before importing db_manager
 import db_manager
 import auth
-import main
 import utils
 
 class TestBackendPipeline(unittest.TestCase):
