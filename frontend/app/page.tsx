@@ -98,7 +98,6 @@ export default function AnalyticsDashboard() {
   const [chatThreads, setChatThreads] = useState<{ [fileId: string]: ChatMessage[] }>({});
   const [selectedChartOverride, setSelectedChartOverride] = useState<{ [msgIndex: number]: string }>({});
   const [queryHistory, setQueryHistory] = useState<any[]>([]);
-  const [groqApiKey, setGroqApiKey] = useState("");
 
   const [dynamicSuggestions, setDynamicSuggestions] = useState<{ text: string; category: string }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -108,16 +107,12 @@ export default function AnalyticsDashboard() {
     const savedToken = localStorage.getItem("hm_token");
     const savedEmail = localStorage.getItem("hm_email");
     const savedUserId = localStorage.getItem("hm_userid");
-    const savedKey = localStorage.getItem("hm_groq_key");
     const savedApiBase = localStorage.getItem("hm_api_base");
 
     if (savedToken && savedEmail && savedUserId) {
       setToken(savedToken);
       setEmail(savedEmail);
       setUserId(savedUserId);
-    }
-    if (savedKey) {
-      setGroqApiKey(savedKey);
     }
     if (savedApiBase) {
       setApiBaseUrl(savedApiBase);
@@ -394,15 +389,6 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  const handleSaveApiKey = (key: string) => {
-    setGroqApiKey(key);
-    if (key.trim()) {
-      localStorage.setItem("hm_groq_key", key);
-    } else {
-      localStorage.removeItem("hm_groq_key");
-    }
-  };
-
   // --- NL-to-SQL Execution Pipeline Handlers ---
 
   const handleSendQuery = async (queryText: string) => {
@@ -423,14 +409,10 @@ export default function AnalyticsDashboard() {
     setIsQuerying(true);
     setQueryError(null);
 
-    const headers: { [key: string]: string } = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`
     };
-
-    if (groqApiKey.trim()) {
-      headers["X-Groq-Key"] = groqApiKey.trim();
-    }
 
     try {
       const response = await fetch(`${API_BASE}/query`, {
@@ -753,8 +735,6 @@ export default function AnalyticsDashboard() {
         {activeTab === 'settings' && (
           <SettingsTab
             isCompact={isCompact}
-            groqApiKey={groqApiKey}
-            handleSaveApiKey={handleSaveApiKey}
             theme={theme}
             handleThemeChange={handleThemeChange}
             handleCompactToggle={handleCompactToggle}

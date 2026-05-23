@@ -22,8 +22,9 @@ def register_user(payload: UserRegisterPayload):
     # Automatically seed sample database for instant experience
     seed_sample_data(user_id)
     
-    # Generate token
+    # Generate token and save as active session
     token = auth.create_access_token({"sub": user_id})
+    db_manager.update_user_active_token(user_id, token)
     return AuthResponse(
         access_token=token,
         token_type="bearer",
@@ -38,6 +39,7 @@ def login_user(payload: UserLoginPayload):
         raise HTTPException(status_code=400, detail="Incorrect email or password.")
     
     token = auth.create_access_token({"sub": user["id"]})
+    db_manager.update_user_active_token(user["id"], token)
     return AuthResponse(
         access_token=token,
         token_type="bearer",
