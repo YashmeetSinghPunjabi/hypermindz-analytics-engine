@@ -41,6 +41,15 @@ sequenceDiagram
 
 1.  **Schema Introspection**: On receiving a user question, the backend queries the database schema using SQLite's `PRAGMA table_info` and extracts a 3-row sample from the table. This is injected dynamically into the LLM system prompt so the LLM is fully schema-aware and doesn't hallucinate column names.
 2.  **Prompt Design**: The system prompt instructs the model to translate the natural language query into a valid, optimized SQLite query. It also feeds the last 5 turns of conversation context (stored in the central database's `chat_history` table) so the model can resolve follow-up filters (e.g., "now filter that by region = West").
+
+#### 🛠️ LangChain SQL Agent Mechanics
+
+Under the hood, the pipeline leverages LangChain's specialized SQL agent framework:
+*   **`SQLDatabase` (SQLAlchemy Wrapper)**: We bind our isolated SQLite connection URI to LangChain's `SQLDatabase` utility. This dynamically inspects the database's schema, tables, and constraints.
+*   **`create_sql_agent` with `"tool-calling"` Agent Type**: We instantiate a stateful agent with Gemini 2.5 Flash Lite. By choosing the `"tool-calling"` agent type, LangChain configures the agent to use Gemini's native API tool-calling capacity. This is much faster and less prone to parsing failures than legacy ReAct text-based agent templates.
+*   **SQL Extraction via Intermediate Steps**: The agent runs in an execution loop where it invokes the database toolkit. To display the exact generated query to the client UI, we configure `return_intermediate_steps=True`. The backend parses the `intermediate_steps` array, finds the action targeting the `sql_db_query` tool, and extracts the raw SQL statement.
+*   **Conversational Memory**: The last 5 turns of user and model chat messages are retrieved from the database and serialized into a conversational string format, which is then fed directly into the prompt template. This allows the LLM to understand references like *"Filter that for North"* as a continuation of previous queries.
+
 3.  **SQL Query Validation (Security Guardrails)**:
     *   **Keyword Blacklist**: The generated SQL is checked programmatically by our custom `SQLSecurityValidator`. It asserts that the SQL statement does *not* contain forbidden keywords like `DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, `CREATE`, `TRUNCATE`, `REPLACE`, `ATTACH`, or `DETACH`.
     *   **Command Checking**: The query must explicitly start with `SELECT` or `WITH`.
