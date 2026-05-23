@@ -205,11 +205,6 @@ export default function AnalyticsDashboard() {
     e.preventDefault();
     if (!authEmail || !authPassword) return;
 
-    if (!authEmail.includes("@")) {
-      setAuthError("Username must be a valid email address.");
-      return;
-    }
-
     setAuthError(null);
     setAuthLoading(true);
 
