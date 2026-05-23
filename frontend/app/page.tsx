@@ -12,6 +12,7 @@ import Sidebar from './components/Sidebar';
 import SettingsTab from './components/Settings';
 import DataCatalog from './components/DataCatalog';
 import Playground from './components/Playground';
+import OnboardingModal from "./components/OnboardingModal";
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
 
@@ -96,10 +97,11 @@ export default function AnalyticsDashboard() {
   const [isQuerying, setIsQuerying] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [chatThreads, setChatThreads] = useState<{ [fileId: string]: ChatMessage[] }>({});
-  const [selectedChartOverride, setSelectedChartOverride] = useState<{ [msgIndex: number]: string }>({});
   const [queryHistory, setQueryHistory] = useState<any[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const [dynamicSuggestions, setDynamicSuggestions] = useState<{ text: string; category: string }[]>([]);
+  const [selectedChartOverride, setSelectedChartOverride] = useState<{ [msgIndex: number]: string }>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load Auth Token from localStorage on startup
@@ -113,6 +115,11 @@ export default function AnalyticsDashboard() {
       setToken(savedToken);
       setEmail(savedEmail);
       setUserId(savedUserId);
+      
+      const hasOnboarded = localStorage.getItem("hm_onboarding_completed");
+      if (!hasOnboarded) {
+        setShowOnboarding(true);
+      }
     }
     if (savedApiBase) {
       setApiBaseUrl(savedApiBase);
@@ -388,6 +395,11 @@ export default function AnalyticsDashboard() {
       await fetchFilesList();
     }
   };
+  
+  const handleDismissOnboarding = () => {
+    localStorage.setItem("hm_onboarding_completed", "true");
+    setShowOnboarding(false);
+  };
 
   // --- NL-to-SQL Execution Pipeline Handlers ---
 
@@ -490,8 +502,6 @@ export default function AnalyticsDashboard() {
 
 
   // --- Auth Wall Render ---
-
-  const isPasswordValid = authPassword.length >= 1;
 
   if (!token) {
     return (
@@ -744,6 +754,8 @@ export default function AnalyticsDashboard() {
         )}
 
       </main>
+      
+      {showOnboarding && <OnboardingModal onDismiss={handleDismissOnboarding} />}
     </div>
   );
 }
