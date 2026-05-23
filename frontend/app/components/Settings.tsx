@@ -21,11 +21,11 @@ export default function SettingsTab({
   setShowOnboarding
 }: SettingsProps) {
   return (
-    <div className={`${isCompact ? 'p-4' : 'p-8'} max-w-2xl space-y-6 flex-1`}>
+    <div className={`${isCompact ? 'p-4' : 'p-4 sm:p-8'} max-w-2xl space-y-6 flex-1`}>
       <h1 className="text-2xl font-black text-slate-800 mb-6">User Settings</h1>
 
       {/* Sleek User Guide Banner */}
-      <div className="bg-gradient-to-r from-slate-500 to-slate-700 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-gradient-to-r from-slate-500 to-slate-700 rounded-2xl p-4 sm:p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1 z-10">
           <h3 className="text-sm font-bold flex items-center gap-2"><Settings className="h-4.5 w-4.5" /> Quick Guide: Settings</h3>
           <p className="text-xs text-slate-200 font-medium">
@@ -35,7 +35,7 @@ export default function SettingsTab({
         {setShowOnboarding && (
           <button
             onClick={() => setShowOnboarding(true)}
-            className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0"
+            className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0 w-full md:w-auto text-center"
           >
             Launch Full Guide
           </button>

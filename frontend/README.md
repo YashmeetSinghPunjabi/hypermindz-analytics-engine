@@ -2,6 +2,20 @@
 
 The HyperMindZ frontend is a highly interactive, component-driven React application built on **Next.js**. It serves as the primary visual interface for users to upload datasets and converse with their data via AI.
 
+---
+
+## 🌟 Premium Features Included
+
+The sandbox contains advanced capabilities to deliver an exceptional analytical experience:
+* **🎙️ Voice Query (Speech-to-Text):** Click the glowing microphone button in the Playground to ask your analytical questions in plain English using real-time voice transcription.
+* **📥 CSV Export:** Export and download the exact rows and columns of any AI-generated query results directly as a spreadsheet.
+* **✍️ Direct SQL Editor Mode:** Switch the terminal input mode from "AI Natural Language" to "Direct SQL Query" to write raw SQLite SELECT queries with full chart visualization support.
+* **💡 Clickable Column Suggestions:** Click any column name inside the Data Catalog profiling cards to automatically pre-fill optimized template queries in the Playground.
+* **🌓 Global Theme Switcher:** Segmented Light, Dark, and System theme selectors placed directly on the top header bar for fast access.
+* **📱 Automated Smooth Scrolling:** Preview tables and column profiling statistics automatically scroll into focus on click.
+
+---
+
 ## 🏗️ Component Architecture
 
 To ensure high maintainability and testability, the user interface has been modularized into distinct visual and functional scopes inside `app/components/`:

@@ -4,6 +4,18 @@ An intelligent, secure, end-to-end GenAI application that lets users upload CSV 
 
 ---
 
+## 🌟 Premium Features Included
+
+The sandbox contains advanced capabilities to deliver an exceptional analytical experience:
+* **🎙️ Voice Query (Speech-to-Text):** Click the glowing microphone button in the Playground to ask your analytical questions in plain English using real-time voice transcription.
+* **📥 CSV Export:** Export and download the exact rows and columns of any AI-generated query results directly as a spreadsheet.
+* **✍️ Direct SQL Editor Mode:** Switch the terminal input mode from "AI Natural Language" to "Direct SQL Query" to write raw SQLite SELECT queries with full chart visualization support.
+* **💡 Clickable Column Suggestions:** Click any column name inside the Data Catalog profiling cards to automatically pre-fill optimized template queries in the Playground.
+* **🌓 Global Theme Switcher:** Segmented Light, Dark, and System theme selectors placed directly on the top header bar for fast access.
+* **📱 Automated Smooth Scrolling:** Preview tables and column profiling statistics automatically scroll into focus on click.
+
+---
+
 ## 🚀 Live Demo & Deployment Information
 
 - **Live Application URL**: [https://hypermindz-frontend.vercel.app/](https://hypermindz-frontend.vercel.app/)

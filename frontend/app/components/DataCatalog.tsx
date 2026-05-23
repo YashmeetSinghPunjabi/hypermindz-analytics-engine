@@ -63,9 +63,9 @@ export default function DataCatalog({
   }, [profilingFileItem, profilingLoading]);
 
   return (
-    <div className="p-8 space-y-8 flex-1">
+    <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 flex-1">
       {/* Sleek User Guide Banner */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 sm:p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1 z-10">
           <h3 className="text-sm font-bold flex items-center gap-2"><Sparkles className="h-4.5 w-4.5" /> Quick Guide: Data Catalog</h3>
           <p className="text-xs text-indigo-100 font-medium max-w-xl">
@@ -75,7 +75,7 @@ export default function DataCatalog({
         {setShowOnboarding && (
           <button
             onClick={() => setShowOnboarding(true)}
-            className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0"
+            className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0 w-full md:w-auto text-center"
           >
             Launch Full Guide
           </button>

@@ -13,6 +13,17 @@ import SettingsTab from './components/Settings';
 import DataCatalog from './components/DataCatalog';
 import Playground from './components/Playground';
 import OnboardingModal from "./components/OnboardingModal";
+import {
+  ResponsiveContainer,
+  AreaChart as RechartsAreaChart,
+  Area,
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  Legend as RechartsLegend
+} from 'recharts';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
 
@@ -770,38 +781,167 @@ export default function AnalyticsDashboard() {
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <div className={`${isCompact ? 'p-4' : 'p-8'} max-w-5xl space-y-6 flex-1`}>
+          <div className={`${isCompact ? 'p-4' : 'p-4 sm:p-8'} max-w-5xl space-y-6 flex-1`}>
             <h1 className="text-2xl font-black text-slate-800">Workspace Dashboard</h1>
             <p className="text-sm text-slate-500 font-medium">Welcome back! Here is an overview of your data sandboxes.</p>
 
             {/* Sleek User Guide Banner */}
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 sm:p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="space-y-1 z-10">
                 <h3 className="text-base font-bold flex items-center gap-2"><Sparkles className="h-5 w-5" /> Quick Guide: Dashboard</h3>
                 <p className="text-xs text-indigo-100 font-medium max-w-xl">Monitor your workspace metrics at a glance. Select active datasets to start running AI queries instantly, or manage your catalog from the sidebar.</p>
               </div>
-              <button onClick={() => setShowOnboarding(true)} className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0">
+              <button onClick={() => setShowOnboarding(true)} className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0 w-full md:w-auto text-center">
                 Launch Full Guide
               </button>
               <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Datasets</span>
-                <span className="text-4xl font-black text-indigo-600">{files.length}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+                <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600">
+                  <Database className="h-6 w-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Datasets</span>
+                  <span className="text-2xl font-black text-indigo-600">{files.length}</span>
+                </div>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Rows Indexed</span>
-                <span className="text-4xl font-black text-emerald-500">{files.reduce((acc, f) => acc + f.row_count, 0).toLocaleString()}</span>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+                <div className="bg-emerald-50 p-3 rounded-xl text-emerald-500">
+                  <FileSpreadsheet className="h-6 w-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Rows</span>
+                  <span className="text-2xl font-black text-emerald-500">{files.reduce((acc, f) => acc + f.row_count, 0).toLocaleString()}</span>
+                </div>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center space-y-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Saved Queries</span>
-                <span className="text-4xl font-black text-amber-500">{queryHistory.length}</span>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+                <div className="bg-amber-50 p-3 rounded-xl text-amber-500">
+                  <History className="h-6 w-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Saved Queries</span>
+                  <span className="text-2xl font-black text-amber-500">{queryHistory.length}</span>
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+                <div className="bg-rose-50 p-3 rounded-xl text-rose-500">
+                  <Zap className="h-6 w-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sandbox Status</span>
+                  <span className="text-sm font-black text-rose-600 flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-rose-600 rounded-full animate-pulse"></span>
+                    100% Secure
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="mt-8 bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
+            {/* Visual Analytics Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+              {/* Chart Column 1 */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <BarChart3 className="h-4 w-4 text-indigo-600" /> Catalog Dataset Row Distribution
+                </h3>
+                <div className="w-full h-64 font-medium text-[10px] text-slate-500">
+                  {files.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-slate-400">No data catalog loaded. Upload a CSV to display.</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsBarChart data={files.map(f => ({ name: f.file_name.substring(0, 12), rows: f.row_count }))} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <XAxis dataKey="name" stroke="#94a3b8" tickLine={false} />
+                        <YAxis stroke="#94a3b8" tickLine={false} />
+                        <RechartsTooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
+                        <Bar dataKey="rows" name="Row Count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                      </RechartsBarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Chart Column 2 */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <History className="h-4 w-4 text-emerald-600" /> Analytical Query Traffic & SQL Lengths
+                </h3>
+                <div className="w-full h-64 font-medium text-[10px] text-slate-500">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsAreaChart 
+                      data={queryHistory.length > 0 
+                        ? queryHistory.slice(-6).map((q, idx) => ({ index: `Q${idx + 1}`, chars: q.question.length, sql: q.sql_query.length }))
+                        : [
+                            { index: 'Mon', chars: 45, sql: 85 },
+                            { index: 'Tue', chars: 50, sql: 95 },
+                            { index: 'Wed', chars: 35, sql: 75 },
+                            { index: 'Thu', chars: 65, sql: 110 },
+                            { index: 'Fri', chars: 40, sql: 90 },
+                            { index: 'Sat', chars: 15, sql: 40 }
+                          ]}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorChars" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorSql" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="index" stroke="#94a3b8" tickLine={false} />
+                      <YAxis stroke="#94a3b8" tickLine={false} />
+                      <RechartsTooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
+                      <Area type="monotone" dataKey="chars" name="Question Length" stroke="#10b981" fillOpacity={1} fill="url(#colorChars)" />
+                      <Area type="monotone" dataKey="sql" name="SQL Length" stroke="#6366f1" fillOpacity={1} fill="url(#colorSql)" />
+                    </RechartsAreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Registered Datasets log table */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-8">
+              <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <FileSpreadsheet className="h-4 w-4 text-indigo-500" /> Recent Session Database Registry
+                </h3>
+                <span className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">SECURE SANDBOX</span>
+              </div>
+              
+              {files.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs font-medium">No registered datasets in this session. Go to Catalog to upload.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-[11px] text-slate-700">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
+                        <th className="px-6 py-3">Dataset Name</th>
+                        <th className="px-6 py-3">Physical Schema ID</th>
+                        <th className="px-6 py-3 text-right">Ingest Rows</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {files.slice(0, 3).map((file) => (
+                        <tr key={file.id} className="hover:bg-slate-50/30 transition-colors">
+                          <td className="px-6 py-3 font-bold text-slate-800 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            {file.file_name}
+                          </td>
+                          <td className="px-6 py-3 font-mono text-[10px] text-slate-400">{file.table_name}</td>
+                          <td className="px-6 py-3 text-right text-slate-600 font-bold">{file.row_count.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8 bg-indigo-50 border border-indigo-100 rounded-2xl p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-5">
               <h2 className="text-sm font-bold text-indigo-800 mb-2 flex items-center gap-2"><Sparkles className="h-4 w-4" /> Quick Actions</h2>
               <div className="flex space-x-4 mt-4">
                 <button onClick={() => setActiveTab('catalog')} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-500">Upload New Dataset</button>

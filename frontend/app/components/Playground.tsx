@@ -56,9 +56,19 @@ export default function Playground({
   handleThemeChange,
   setShowOnboarding
 }: PlaygroundProps) {
-  const [queryMode, setQueryMode] = React.useState<'nl' | 'sql'>('nl');
   const [isListening, setIsListening] = React.useState(false);
+  const [queryMode, setQueryMode] = React.useState<'nl' | 'sql'>('nl');
   const recognitionRef = React.useRef<any>(null);
+  const [activeMessageTab, setActiveMessageTab] = React.useState<{ [msgIndex: number]: 'chart' | 'table' }>({});
+
+  const isChartable = (data: any[]) => {
+    if (!data || data.length === 0) return false;
+    const keys = Object.keys(data[0]);
+    return keys.some(key => {
+      const val = data[0][key];
+      return typeof val === 'number' || (typeof val === 'string' && !isNaN(parseFloat(val)));
+    });
+  };
 
   const toggleListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -128,13 +138,20 @@ export default function Playground({
 
   // Renders the Recharts visualization based on configs
   const renderMessageChart = (msg: any, msgIndex: number) => {
-    if (!msg.data || msg.data.length === 0 || !msg.visualization_config) return null;
+    if (!msg.data || msg.data.length === 0) return null;
 
-    const recommendedType = msg.visualization_config.type;
+    const config = msg.visualization_config || {
+      recommended: true,
+      type: 'bar',
+      x_axis_key: Object.keys(msg.data[0])[0],
+      y_axis_key: Object.keys(msg.data[0]).find(k => typeof msg.data[0][k] === 'number') || Object.keys(msg.data[0])[0]
+    };
+
+    const recommendedType = config.type || 'bar';
     const activeChartType = selectedChartOverride[msgIndex] || recommendedType;
 
-    const xKey = msg.visualization_config.x_axis_key || "";
-    const yKey = msg.visualization_config.y_axis_key || "";
+    const xKey = config.x_axis_key || "";
+    const yKey = config.y_axis_key || "";
 
     if (activeChartType === 'none' || !xKey || !yKey) return null;
 
@@ -303,7 +320,7 @@ export default function Playground({
         </header>
 
         {/* Chat Speech Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {!activeFile ? (
             <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
               <div className="bg-slate-200/50 p-4 rounded-3xl text-slate-400">
@@ -323,7 +340,7 @@ export default function Playground({
           ) : (
             <>
               {/* Sleek User Guide Banner for Playground */}
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-4 sm:p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="space-y-1 z-10">
                   <h3 className="text-sm font-bold flex items-center gap-2"><Sparkles className="h-4.5 w-4.5" /> Quick Guide: AI Playground</h3>
                   <p className="text-xs text-emerald-100 font-medium max-w-xl">
@@ -333,7 +350,7 @@ export default function Playground({
                 {setShowOnboarding && (
                   <button
                     onClick={() => setShowOnboarding(true)}
-                    className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0"
+                    className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 transition-all shadow-sm z-10 shrink-0 w-full md:w-auto text-center"
                   >
                     Launch Full Guide
                   </button>
@@ -403,16 +420,40 @@ export default function Playground({
                         </div>
                       )}
 
-                      {/* Chart render section */}
-                      {msg.visualization_config?.recommended && renderMessageChart(msg, index)}
-
-                      {/* Response Data Table Grid */}
+                      {/* Unified Result Container (Table vs Chart Tabs) */}
                       {msg.data && msg.data.length > 0 && (
-                        <div className="space-y-2 border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50 p-3">
-                          <div className="flex justify-between items-center pb-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                              <Table className="h-3.5 w-3.5 text-indigo-600" /> Result Dataset ({msg.data.length} rows)
-                            </span>
+                        <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50 shadow-inner-sm mt-3 space-y-3 p-4">
+                          <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                            {/* Segmented control for Table vs Chart */}
+                            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                              <button
+                                type="button"
+                                onClick={() => setActiveMessageTab({ ...activeMessageTab, [index]: 'table' })}
+                                className={`text-[10px] font-bold px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                                  (activeMessageTab[index] || 'table') === 'table'
+                                    ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                              >
+                                <Table className="h-3 w-3 text-slate-500" />
+                                Data Table
+                              </button>
+                              {isChartable(msg.data) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveMessageTab({ ...activeMessageTab, [index]: 'chart' })}
+                                  className={`text-[10px] font-bold px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                                    (activeMessageTab[index] || (msg.visualization_config?.recommended ? 'chart' : 'table')) === 'chart'
+                                      ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
+                                      : 'text-slate-500 hover:text-slate-800'
+                                  }`}
+                                >
+                                  <BarChart3 className="h-3 w-3 text-indigo-500" />
+                                  Visual Chart
+                                </button>
+                              )}
+                            </div>
+
                             <button
                               onClick={() => downloadCSV(msg.data, `${activeFile ? activeFile.file_name.replace('.csv', '') : 'query'}_result_${index}.csv`)}
                               className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/85 border border-indigo-100 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
@@ -421,33 +462,41 @@ export default function Playground({
                               <Download className="h-3 w-3" /> Export CSV
                             </button>
                           </div>
-                          <div className="overflow-x-auto border border-slate-100 rounded-lg max-h-60 bg-white">
-                            <table className="w-full text-left border-collapse text-[11px]">
-                              <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
-                                  {Object.keys(msg.data[0]).map((header) => (
-                                    <th key={header} className="px-3 py-2.5 capitalize truncate">{header.replace(/_/g, ' ')}</th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 text-slate-700">
-                                {msg.data.map((row: any, rIdx: number) => (
-                                  <tr key={rIdx} className="hover:bg-slate-50/50 transition-colors">
-                                    {Object.values(row).map((val: any, cIdx: number) => (
-                                      <td key={cIdx} className="px-3 py-2 font-medium">
-                                        {val === null || val === undefined
-                                          ? <span className="text-slate-300">null</span>
-                                          : typeof val === 'number'
-                                            ? val.toLocaleString()
-                                            : String(val)
-                                        }
-                                      </td>
+
+                          {/* Tab Content */}
+                          {((activeMessageTab[index] || (msg.visualization_config?.recommended ? 'chart' : 'table')) === 'chart') && isChartable(msg.data) ? (
+                            <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+                              {renderMessageChart(msg, index)}
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto border border-slate-100 rounded-xl bg-white max-h-60">
+                              <table className="w-full text-left border-collapse text-[11px]">
+                                <thead>
+                                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
+                                    {Object.keys(msg.data[0]).map((header) => (
+                                      <th key={header} className="px-3 py-2.5 capitalize truncate">{header.replace(/_/g, ' ')}</th>
                                     ))}
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                  {msg.data.map((row: any, rIdx: number) => (
+                                    <tr key={rIdx} className="hover:bg-slate-50/50 transition-colors">
+                                      {Object.values(row).map((val: any, cIdx: number) => (
+                                        <td key={cIdx} className="px-3 py-2 font-medium">
+                                          {val === null || val === undefined
+                                            ? <span className="text-slate-300">null</span>
+                                            : typeof val === 'number'
+                                              ? val.toLocaleString()
+                                              : String(val)
+                                          }
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -487,7 +536,7 @@ export default function Playground({
 
         {/* Chat Input Console Form */}
         {activeFile && (
-          <div className="p-6 bg-white border-t border-slate-200 space-y-4">
+          <div className="p-4 sm:p-6 bg-white border-t border-slate-200 space-y-4">
             
             {/* Input Mode Toggle & Voice Indicator */}
             <div className="flex items-center justify-between">
