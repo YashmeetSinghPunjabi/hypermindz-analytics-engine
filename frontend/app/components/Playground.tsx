@@ -28,7 +28,7 @@ interface PlaygroundProps {
   selectedChartOverride: { [key: number]: string };
   setSelectedChartOverride: (override: any) => void;
   setActiveTab: (tab: any) => void;
-  chatEndRef: React.RefObject<HTMLDivElement>;
+  chatEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function Playground({
