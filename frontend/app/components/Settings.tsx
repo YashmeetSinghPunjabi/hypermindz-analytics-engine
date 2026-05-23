@@ -6,7 +6,7 @@ interface SettingsProps {
   groqApiKey: string;
   handleSaveApiKey: (key: string) => void;
   theme: string;
-  handleThemeChange: (theme: string) => void;
+  handleThemeChange: (theme: 'light' | 'dark' | 'system') => void;
   handleCompactToggle: () => void;
   handleReSeedData: () => void;
   handleSignOut: () => void;
@@ -64,7 +64,7 @@ export default function SettingsTab({
           </div>
           <select
             value={theme}
-            onChange={(e) => handleThemeChange(e.target.value)}
+            onChange={(e) => handleThemeChange(e.target.value as 'light' | 'dark' | 'system')}
             className="bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="light">Light Mode</option>
