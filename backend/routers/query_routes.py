@@ -135,7 +135,12 @@ def query_tabular_data(
         
         agent_prompt = f"""
 You are an expert data analyst. Translate the user's natural language question into an optimized, executable SQLite query and answer it.
-IMPORTANT: You MUST use the `sql_db_query` tool to execute the query before providing your final answer.
+
+CRITICAL INSTRUCTIONS:
+1. DO NOT just explain what you are going to do. You MUST actually provide the SQL query.
+2. You MUST either use the `sql_db_query` tool to execute the query, OR output the raw query wrapped exactly in a ```sql ... ``` markdown block in your final answer.
+3. Stop talking and just output the SQL.
+
 Chat History for context:
 {history_str}
 
