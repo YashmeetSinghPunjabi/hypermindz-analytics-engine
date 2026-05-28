@@ -553,8 +553,8 @@ export default function Playground({
                 </div>
               ) : (
                 (chatThreads[activeFile.id] || []).map((msg, index) => (
-                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`w-full md:max-w-3xl space-y-2 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md md:w-auto max-w-[90%]' : ''}`}>
+                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
+                <div className={`w-full space-y-3 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md w-fit max-w-[85%] md:max-w-[75%]' : 'max-w-[95%] md:max-w-3xl lg:max-w-4xl'}`}>
 
                   {/* User Chat Bubble */}
                   {msg.role === 'user' && (
@@ -652,7 +652,7 @@ export default function Playground({
                               {renderMessageChart(msg, index)}
                             </div>
                           ) : (
-                            <div className="overflow-x-auto border border-slate-100 rounded-xl bg-white max-h-60">
+                            <div className="max-w-full overflow-x-auto border border-slate-100 rounded-xl bg-white max-h-60">
                               <table className="w-full text-left border-collapse text-[11px]">
                                 <thead>
                                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
@@ -700,17 +700,22 @@ export default function Playground({
 
           {/* Query loading skeleton */}
           {isQuerying && (
-            <div className="flex justify-start">
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3 w-full max-w-xl animate-pulse">
-                <div className="flex items-center space-x-2 border-b border-slate-100 pb-2">
-                  <div className="h-4 w-4 bg-slate-200 rounded-full"></div>
-                  <div className="h-3 w-28 bg-slate-200 rounded"></div>
+            <div className="flex justify-start mb-6">
+              <div className="bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm space-y-4 w-full max-w-xl">
+                <div className="flex items-center space-x-3 border-b border-slate-100 pb-3">
+                  <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
+                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest animate-pulse">
+                    AI is analyzing...
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <div className="h-3 w-full bg-slate-200 rounded"></div>
-                  <div className="h-3 w-5/6 bg-slate-200 rounded"></div>
+                <div className="space-y-2 px-1">
+                  <div className="flex items-center gap-2 text-slate-500">
+                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <p className="text-xs font-semibold ml-2">Writing SQL and parsing your dataset. Please wait a moment...</p>
+                  </div>
                 </div>
-                <div className="h-20 bg-slate-900/5 rounded-xl border border-slate-200/50"></div>
               </div>
             </div>
           )}
