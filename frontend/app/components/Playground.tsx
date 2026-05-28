@@ -8,7 +8,7 @@ import {
 import {
   Database, AlertCircle, Table, FileSpreadsheet,
   RefreshCw, Sparkles, Play, History, ChevronRight, BarChart3, HelpCircle,
-  Mic, MicOff, Download, Code, Terminal, Upload, Zap
+  Mic, MicOff, Download, Code, Terminal, Upload, Zap, User
 } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
@@ -304,13 +304,10 @@ export default function Playground({
   };
 
   return (
-    <div className="flex-1 flex min-h-0 bg-slate-50">
-      {/* Chat Conversation Thread Section */}
-      <div className="flex-1 flex flex-col border-r border-slate-200 min-h-0">
-
-        {/* Playground Header */}
-        <header className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shadow-sm">
-          <div className="flex items-center space-x-3">
+    <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-slate-50 to-slate-100/50 relative overflow-hidden">
+        {/* Playground Header (Global) */}
+        <header className="px-4 sm:px-6 py-3 sm:py-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm z-20 shrink-0 w-full overflow-hidden">
+          <div className="flex items-center space-x-2 sm:space-x-3 overflow-x-auto pb-1 md:pb-0 hide-scrollbar w-full md:w-auto">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Scope:</span>
             {files && files.length > 0 ? (
               <div className="relative inline-flex items-center">
@@ -340,47 +337,46 @@ export default function Playground({
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap md:flex-nowrap w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
             {activeFile && (
               <button
                 onClick={handleClearHistory}
-                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200/70 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors flex items-center gap-1"
+                className="text-[10px] font-bold text-rose-500 hover:text-white bg-rose-50 hover:bg-rose-500 px-3 py-1.5 rounded-lg border border-rose-200 transition-colors flex items-center gap-1 shadow-sm shrink-0"
                 title="Clear chat context memory"
               >
                 <RefreshCw className="h-3 w-3" />
-                Reset Chat Context
+                Clear Chat
               </button>
             )}
 
             {/* AI Model Toggle */}
             {setSelectedAiModel && selectedAiModel && (
-              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => setSelectedAiModel('gemini-2.5-flash')}
-                  className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all flex items-center gap-1 ${selectedAiModel === 'gemini-2.5-flash' ? 'bg-white text-indigo-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
+              <div className="relative inline-flex items-center shrink-0">
+                <select
+                  value={selectedAiModel}
+                  onChange={(e) => setSelectedAiModel(e.target.value as any)}
+                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-3 py-1.5 pr-7 rounded-lg text-[10px] outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer appearance-none shadow-sm transition-all"
                 >
-                  <Sparkles className="h-3 w-3" /> Flash
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedAiModel('gemini-2.5-flash-lite')}
-                  className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all flex items-center gap-1 ${selectedAiModel === 'gemini-2.5-flash-lite' ? 'bg-white text-indigo-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
-                >
-                  <Zap className="h-3 w-3" /> Flash-Lite
-                </button>
+                  <option value="gemini-2.5-flash">Gemini Flash</option>
+                  <option value="gemini-2.5-flash-lite">Gemini Flash-Lite</option>
+                </select>
+                <div className="pointer-events-none absolute right-2 flex items-center text-slate-400">
+                  <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
               </div>
             )}
 
             {/* Theme Toggle (Playground Header) */}
             {handleThemeChange && theme && (
-              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner shrink-0">
                 {['light', 'dark', 'system'].map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => handleThemeChange(t as any)}
-                    className={`px-2 py-1 text-[9px] font-bold rounded-md capitalize transition-all ${theme === t ? 'bg-white text-indigo-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
+                    className={`px-2 py-1 text-[9px] font-bold rounded-md capitalize transition-all ${theme === t ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     {t}
                   </button>
@@ -401,8 +397,13 @@ export default function Playground({
           </div>
         </header>
 
-        {/* Chat Speech Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Main Content Area (Chat + Logs) */}
+      <div className="flex-1 flex min-h-0 relative">
+        {/* Chat Conversation Thread Section */}
+        <div className="flex-1 flex flex-col border-r border-slate-200/60 min-h-0 relative z-0">
+
+          {/* Chat Speech Area */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {!activeFile ? (
             <div className="h-full max-w-2xl mx-auto flex flex-col justify-center py-8 px-4 space-y-6">
               {files && files.length > 0 ? (
@@ -553,34 +554,42 @@ export default function Playground({
                 </div>
               ) : (
                 (chatThreads[activeFile.id] || []).map((msg, index) => (
-                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
-                <div className={`w-full space-y-3 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-md w-fit max-w-[85%] md:max-w-[75%]' : 'max-w-[95%] md:max-w-3xl lg:max-w-4xl'}`}>
-
-                  {/* User Chat Bubble */}
-                  {msg.role === 'user' && (
-                    <p className="text-xs font-semibold leading-relaxed">{msg.content}</p>
-                  )}
-
-                  {/* Model Insight Box */}
-                  {msg.role === 'model' && (
-                    <div className={`bg-white border rounded-2xl p-5 shadow-sm space-y-4 text-slate-800 ${msg.isError ? 'border-rose-200 bg-rose-50/50' : 'border-slate-200'}`}>
-
-                      {/* Attributed Source File */}
-                      {msg.source_file && (
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 border-b border-slate-100 pb-1.5">
-                          <Database className="h-3 w-3 text-indigo-500" /> Source: {msg.source_file}
-                        </div>
-                      )}
-
-                      {/* Response content description */}
-                      <div className="flex items-start space-x-3">
-                        {msg.isError ? (
-                          <AlertCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
+                  <div key={index} className={`flex w-full ${msg.role === 'user' ? 'py-6' : 'bg-white/40 border-y border-slate-200/40 py-8 shadow-sm'} justify-center`}>
+                    <div className="w-full max-w-4xl flex gap-4 px-4 sm:px-6">
+                      {/* Avatar */}
+                      <div className="shrink-0 mt-0.5">
+                        {msg.role === 'user' ? (
+                          <div className="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center border border-indigo-200/50 shadow-sm">
+                            <User className="h-4.5 w-4.5 text-indigo-600" />
+                          </div>
                         ) : (
-                          <Database className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+                          <div className="h-8 w-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md shadow-indigo-600/20">
+                            <Sparkles className="h-4.5 w-4.5 text-white" />
+                          </div>
                         )}
-                        <p className="text-xs font-medium text-slate-600 leading-relaxed">{msg.content}</p>
                       </div>
+
+                      {/* Content Area */}
+                      <div className="flex-1 min-w-0 space-y-4">
+                        {msg.role === 'user' && (
+                          <p className="text-[13px] font-semibold text-slate-800 leading-relaxed pt-1">{msg.content}</p>
+                        )}
+                        
+                        {msg.role === 'model' && (
+                          <div className={`space-y-4 text-slate-800 w-full ${msg.isError ? 'p-4 rounded-xl ring-1 ring-rose-200 bg-rose-50/80' : ''}`}>
+                            
+                            {/* Attributed Source File */}
+                            {msg.source_file && !msg.isError && (
+                              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 mb-2">
+                                <Database className="h-3 w-3 text-indigo-500" /> Source: {msg.source_file}
+                              </div>
+                            )}
+
+                            {/* Response content description */}
+                            <div className="flex items-start space-x-2">
+                              {msg.isError && <AlertCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />}
+                              <p className="text-[13px] text-slate-700 leading-relaxed font-medium">{msg.content}</p>
+                            </div>
 
                       {/* SQL query code viewer */}
                       {msg.sql_query && (
@@ -693,27 +702,30 @@ export default function Playground({
                   )}
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))
+        )}
         </>
       )}
 
           {/* Query loading skeleton */}
           {isQuerying && (
-            <div className="flex justify-start mb-6">
-              <div className="bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm space-y-4 w-full max-w-xl">
-                <div className="flex items-center space-x-3 border-b border-slate-100 pb-3">
-                  <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
-                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest animate-pulse">
+            <div className="flex w-full bg-white/40 border-y border-slate-200/40 py-8 shadow-sm justify-center">
+              <div className="w-full max-w-4xl flex gap-4 px-4 sm:px-6">
+                <div className="shrink-0 mt-0.5">
+                  <div className="h-8 w-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md shadow-indigo-600/20">
+                    <Sparkles className="h-4.5 w-4.5 text-white animate-pulse" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 space-y-4 pt-1">
+                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest animate-pulse block">
                     AI is analyzing...
                   </span>
-                </div>
-                <div className="space-y-2 px-1">
                   <div className="flex items-center gap-2 text-slate-500">
                     <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                     <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                     <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    <p className="text-xs font-semibold ml-2">Writing SQL and parsing your dataset. Please wait a moment...</p>
+                    <p className="text-[13px] font-semibold ml-2">Writing SQL and parsing your dataset...</p>
                   </div>
                 </div>
               </div>
@@ -724,7 +736,7 @@ export default function Playground({
 
         {/* Chat Input Console Form */}
         {activeFile && (
-          <div className="p-4 sm:p-6 bg-white border-t border-slate-200 space-y-4">
+          <div className="p-4 sm:p-6 bg-white/90 backdrop-blur-xl border-t border-slate-200/50 space-y-4 sticky bottom-0 z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
             
             {/* Input Mode Toggle & Voice Indicator */}
             <div className="flex items-center justify-between">
@@ -819,13 +831,13 @@ export default function Playground({
                   ? "e.g. 'What is the sum of revenue for Q1 by region?'" 
                   : `e.g. SELECT * FROM ${activeFile ? activeFile.table_name : 'table'} LIMIT 10;`}
                 disabled={isQuerying}
-                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 bg-slate-50/50 text-xs placeholder:text-slate-400 font-semibold"
+                className="flex-1 px-4 py-3 rounded-xl border border-slate-200/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 bg-white/50 backdrop-blur-sm text-xs placeholder:text-slate-400 font-semibold shadow-inner-sm transition-all"
               />
               {isQuerying ? (
                 <button
                   type="button"
                   onClick={onCancelQuery}
-                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-rose-600/10 cursor-pointer animate-pulse"
+                  className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-rose-600/20 cursor-pointer animate-pulse hover:-translate-y-0.5"
                   title="Force cancel execution"
                 >
                   <span>Cancel Query</span>
@@ -835,7 +847,7 @@ export default function Playground({
                 <button
                   type="submit"
                   disabled={!nlQuery.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-indigo-600/10"
+                  className="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 disabled:from-slate-200 disabled:to-slate-100 disabled:text-slate-400 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center space-x-2 text-xs shadow-md shadow-indigo-600/20 hover:-translate-y-0.5 hover:shadow-lg disabled:hover:translate-y-0 disabled:shadow-none"
                 >
                   <span>{queryMode === 'nl' ? "Run Query" : "Run SQL"}</span>
                   <Play className="h-3.5 w-3.5 fill-current" />
@@ -847,7 +859,7 @@ export default function Playground({
       </div>
 
       {/* Playground Right Side Execution Logs Panel */}
-      <div className="hidden lg:flex w-80 flex-col bg-white overflow-y-auto max-h-screen border-l border-slate-200">
+      <div className="hidden lg:flex w-80 flex-col bg-white overflow-y-auto h-full border-l border-slate-200 relative z-0">
         <div className="p-6 border-b border-slate-200 flex items-center space-x-2 shadow-sm">
           <History className="h-4 w-4 text-indigo-600" />
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Execution Logs</h3>
@@ -929,6 +941,7 @@ export default function Playground({
               </button>
             ))
           )}
+        </div>
         </div>
       </div>
     </div>
