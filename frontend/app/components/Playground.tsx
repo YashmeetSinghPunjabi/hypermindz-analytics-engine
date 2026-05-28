@@ -192,7 +192,7 @@ export default function Playground({
     const xKey = config.x_axis_key || Object.keys(msg.data[0])[0] || "";
     const yKey = config.y_axis_key || Object.keys(msg.data[0]).find(k => typeof msg.data[0][k] === 'number') || Object.keys(msg.data[0])[0] || "";
 
-    if (activeChartType === 'none' || !xKey || !yKey) return null;
+    if (!xKey || !yKey) return null;
 
     // Check if keys exist in data keys
     const firstRowKeys = Object.keys(msg.data[0]);
@@ -242,6 +242,11 @@ export default function Playground({
         </div>
 
         <div className="w-full h-64 pt-2 font-medium text-[10px] text-slate-500" style={{ minWidth: 0, minHeight: 0 }}>
+          {activeChartType === 'none' ? (
+            <div className="flex h-full items-center justify-center text-slate-400 font-medium bg-slate-50 rounded-xl border border-slate-100 border-dashed">
+              Chart hidden. Select a chart type above to unhide.
+            </div>
+          ) : (
           <ResponsiveContainer width="99%" height={240}>
             {activeChartType === 'bar' ? (
               <RechartsBarChart data={formattedData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
@@ -279,7 +284,7 @@ export default function Playground({
                   data={formattedData}
                   dataKey={actualYKey}
                   nameKey={actualXKey}
-                  cx="50%" cy="45%" outerRadius={70} labelLine={false} label={({ name, percent }: any) => `${(name || '').substring(0, 10)}: ${((percent || 0) * 100).toFixed(0)}%`}
+                  cx="50%" cy="45%" outerRadius={70} labelLine={false} label={({ name, percent }: any) => `${String(name || '').substring(0, 10)}: ${((percent || 0) * 100).toFixed(0)}%`}
                 >
                   {formattedData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -292,6 +297,7 @@ export default function Playground({
               <div className="flex h-full items-center justify-center text-slate-400 font-medium">Visualization override failed: Data format mismatch.</div>
             )}
           </ResponsiveContainer>
+          )}
         </div>
       </div>
     );

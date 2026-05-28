@@ -158,7 +158,7 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     if (token) {
       fetchFilesList();
-      fetchQueryHistory();
+      fetchQueryHistory(activeFile?.id);
     }
   }, [token]);
 
@@ -178,6 +178,10 @@ export default function AnalyticsDashboard() {
         })
         .then(data => setDynamicSuggestions(data.suggestions))
         .catch(() => setDynamicSuggestions([]));
+        
+      fetchQueryHistory(activeFile.id);
+    } else if (!activeFile && token) {
+      fetchQueryHistory();
     }
   }, [activeFile, token, API_BASE]);
 
@@ -304,10 +308,11 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  const fetchQueryHistory = async () => {
+  const fetchQueryHistory = async (fileId?: string) => {
     if (!token) return;
     try {
-      const response = await fetch(`${API_BASE}/history`, {
+      const url = fileId ? `${API_BASE}/history?file_id=${fileId}` : `${API_BASE}/history`;
+      const response = await fetch(url, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!checkAuthResponse(response)) return;
@@ -542,7 +547,7 @@ export default function AnalyticsDashboard() {
       });
 
       // Update history catalog
-      fetchQueryHistory();
+      fetchQueryHistory(activeFile?.id);
     } catch (err: any) {
       if (err.name === 'AbortError') {
         return;
