@@ -114,6 +114,7 @@ export default function AnalyticsDashboard() {
 
   const [dynamicSuggestions, setDynamicSuggestions] = useState<{ text: string; category: string }[]>([]);
   const [selectedChartOverride, setSelectedChartOverride] = useState<{ [msgIndex: number]: string }>({});
+  const [selectedAiModel, setSelectedAiModel] = useState<string>("gemini-2.5-flash");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -464,7 +465,7 @@ export default function AnalyticsDashboard() {
 
   // --- NL-to-SQL Execution Pipeline Handlers ---
 
-  const handleSendQuery = async (queryText: string) => {
+  const handleSendQuery = async (queryText: string, mode: string = 'nl') => {
     if (!queryText.trim() || !activeFile || !token) return;
 
     const currentFileId = activeFile.id;
@@ -496,7 +497,9 @@ export default function AnalyticsDashboard() {
         headers: headers,
         body: JSON.stringify({
           file_id: currentFileId,
-          natural_language_query: userQuery
+          natural_language_query: userQuery,
+          query_mode: mode,
+          ai_model: selectedAiModel
         }),
         signal: controller.signal
       });
@@ -610,7 +613,8 @@ export default function AnalyticsDashboard() {
         headers: headers,
         body: JSON.stringify({
           file_id: currentFileId,
-          natural_language_query: sqlToRun
+          natural_language_query: sqlToRun,
+          ai_model: selectedAiModel
         })
       });
 
@@ -1069,7 +1073,7 @@ export default function AnalyticsDashboard() {
         )}
 
         {/* PlayGround Tab */}
-        {activeTab === 'playground' && (
+        {activeTab === 'playground' && activeFile && (
           <Playground
             activeFile={activeFile}
             chatThreads={chatThreads}
@@ -1094,6 +1098,8 @@ export default function AnalyticsDashboard() {
             isUploading={isUploading}
             onCancelQuery={handleCancelQuery}
             onReloadHistoryItem={handleReloadHistoryItem}
+            selectedAiModel={selectedAiModel}
+            setSelectedAiModel={setSelectedAiModel}
           />
         )}
 

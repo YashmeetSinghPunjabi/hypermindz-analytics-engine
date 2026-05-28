@@ -54,12 +54,21 @@ def query_tabular_data(
     db_uri = f"sqlite:///{db_path}"
     db = SQLDatabase.from_uri(db_uri)
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    import random
+    
+    # Collect all fallback keys to load-balance and prevent rate limits
+    gemini_keys = []
+    for k, v in os.environ.items():
+        if k.startswith("GEMINI_API_KEY") and v.strip():
+            gemini_keys.append(v.strip())
+            
+    if not gemini_keys:
         raise HTTPException(status_code=400, detail="Gemini API Key is missing. Please configure it in your Settings or environment.")
+        
+    api_key = random.choice(gemini_keys)
     
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite", 
+        model=payload.ai_model or "gemini-2.5-flash", 
         google_api_key=api_key,
         temperature=0,
         convert_system_message_to_human=True
@@ -68,35 +77,27 @@ def query_tabular_data(
     try:
         # Check if the query is a raw SQL query
         query_stripped = payload.natural_language_query.strip().strip("`").replace("sql\n", "").strip()
-        upper_query = query_stripped.upper()
-        if upper_query.startswith("SELECT") or upper_query.startswith("WITH"):
+        if payload.query_mode == "sql":
             sanitized_sql = SQLSecurityValidator.validate_query(query_stripped)
             conn = sqlite3.connect(db_path)
             df_result = pd.read_sql_query(sanitized_sql, conn)
             conn.close()
 
-            viz_prompt = ChatPromptTemplate.from_messages([
-                ("system", 'Analyze this SQL query and recommend a UI chart. Return ONLY JSON matching this schema: {{"visualization_recommended": true/false, "chart_type": "bar"/"line"/"pie"/"none", "x_axis_key": "column_name_or_null", "y_axis_key": "column_name_or_null"}}'),
-                ("human", "SQL: {sql}\nQuestion: Custom Query")
-            ])
-            viz_chain = viz_prompt | llm | JsonOutputParser()
-            try:
-                viz_config = viz_chain.invoke({"sql": sanitized_sql})
-            except Exception:
-                viz_config = {"visualization_recommended": False, "chart_type": "none", "x_axis_key": None, "y_axis_key": None}
-
             actual_cols = list(df_result.columns)
-            x_key = viz_config.get("x_axis_key")
-            y_key = viz_config.get("y_axis_key")
+            x_key = actual_cols[0] if actual_cols else None
+            y_key = None
+            if len(actual_cols) > 1:
+                # Find the first numeric column for y-axis
+                for col in actual_cols[1:]:
+                    if pd.api.types.is_numeric_dtype(df_result[col]):
+                        y_key = col
+                        break
+                if not y_key:
+                    y_key = actual_cols[1]
             
-            if x_key not in actual_cols:
-                x_key = actual_cols[0] if actual_cols else None
-            if y_key not in actual_cols:
-                y_key = actual_cols[1] if len(actual_cols) > 1 else (actual_cols[0] if actual_cols else None)
-                
             viz_cfg = {
-                "recommended": viz_config.get("visualization_recommended", False),
-                "type": viz_config.get("chart_type", "none"),
+                "recommended": len(actual_cols) >= 2,
+                "type": "bar" if len(actual_cols) >= 2 else "none",
                 "x_axis_key": x_key,
                 "y_axis_key": y_key
             }
@@ -134,12 +135,24 @@ def query_tabular_data(
         )
         
         agent_prompt = f"""
-You are an expert data analyst. Translate the user's natural language question into an optimized, executable SQLite query and answer it.
+You are an expert data analyst and a strict SQL AI Agent. Your ONLY job is to write an optimized SQLite query to answer the user's question.
 
-CRITICAL INSTRUCTIONS:
-1. DO NOT just explain what you are going to do. You MUST actually provide the SQL query.
-2. You MUST either use the `sql_db_query` tool to execute the query, OR output the raw query wrapped exactly in a ```sql ... ``` markdown block in your final answer.
-3. Stop talking and just output the SQL.
+VERY STRICT OUTPUT INSTRUCTIONS:
+Because you are a lightweight model, you MUST follow these formatting rules exactly, or the system will crash:
+1. You MUST write the raw SQL query in your final response.
+2. The SQL query MUST be wrapped exactly inside a markdown code block like this:
+```sql
+SELECT * FROM table_name;
+```
+3. DO NOT output the query as plain text without the markdown block.
+4. DO NOT use bullet points or lists to describe the query instead of writing the code.
+5. Provide ONLY the final answer and the sql block. Stop talking and output the SQL block.
+6. You are querying a SQLite database. Do not use functions that do not exist in SQLite.
+
+DATABASE SCHEMA:
+The ONLY table you need to query is exactly named: `{file_info["table_name"]}`
+The columns available in this table are exactly: {file_info["columns"]}
+Do not guess table names. Use EXACTLY `{file_info["table_name"]}`.
 
 Chat History for context:
 {history_str}
@@ -147,24 +160,58 @@ Chat History for context:
 User Question: {payload.natural_language_query}
 """
         response = agent_executor.invoke({"input": agent_prompt})
-        explanation = response.get("output", "")
-        
+        raw_output = response.get("output", "")
+        if isinstance(raw_output, list):
+            text_parts = []
+            for part in raw_output:
+                if isinstance(part, str):
+                    text_parts.append(part)
+                elif isinstance(part, dict) and "text" in part:
+                    text_parts.append(part["text"])
+            explanation = "".join(text_parts)
+        else:
+            explanation = str(raw_output)
+
         sql_query = ""
         for action, observation in response.get("intermediate_steps", []):
-            if action.tool == "sql_db_query":
-                if isinstance(action.tool_input, dict):
-                    sql_query = action.tool_input.get("query", "")
+            tool_name = getattr(action, "tool", str(action))
+            if "sql_db_query" in tool_name:
+                tool_input = getattr(action, "tool_input", {})
+                if isinstance(tool_input, dict):
+                    sql_query = tool_input.get("query", "")
                 else:
-                    sql_query = str(action.tool_input)
+                    sql_query = str(tool_input)
                 break
                 
         if not sql_query.strip():
             import re
-            match = re.search(r"```sql\n(.*?)\n```", explanation, re.DOTALL | re.IGNORECASE)
+            # First fallback: Check explanation for markdown blocks
+            match = re.search(r"```(?:sql)?\n(.*?)\n```", explanation, re.DOTALL | re.IGNORECASE)
             if match:
                 sql_query = match.group(1)
             else:
-                return handle_unanswerable(payload, user_id, explanation, file_info["file_name"])
+                # Second fallback: Aggressively search intermediate steps for the query dict
+                steps_str = str(response.get("intermediate_steps", []))
+                fallback_match = re.search(r"['\"]query['\"]\s*:\s*['\"](SELECT\s+.*?)['\"]", steps_str, re.IGNORECASE | re.DOTALL)
+                if fallback_match:
+                    sql_query = fallback_match.group(1)
+                
+            # Third fallback: Did the AI just spit out raw SQL text directly?
+            if not sql_query.strip() and explanation.strip().upper().startswith("SELECT "):
+                sql_query = explanation.strip()
+
+        if not sql_query.strip():
+            return handle_unanswerable(payload, user_id, explanation, file_info["file_name"])
+
+        import re
+        # Clean the explanation so the frontend doesn't double-print the SQL query in the chat bubble
+        explanation = re.sub(r"```(?:sql)?\s*.*?\s*```", "", explanation, flags=re.DOTALL | re.IGNORECASE).strip()
+        # Also clean up any raw SELECT queries that were dumped
+        if sql_query in explanation:
+            explanation = explanation.replace(sql_query, "").strip()
+            
+        if len(explanation) < 5:
+            explanation = "Here is the data you requested:"
 
         sanitized_sql = SQLSecurityValidator.validate_query(sql_query)
         
@@ -172,25 +219,21 @@ User Question: {payload.natural_language_query}
         df_result = pd.read_sql_query(sanitized_sql, conn)
         conn.close()
 
-        viz_prompt = ChatPromptTemplate.from_messages([
-            ("system", 'Analyze this SQL query and its results context to recommend a UI chart. Return ONLY JSON matching this schema: {{"visualization_recommended": true/false, "chart_type": "bar"/"line"/"pie"/"none", "x_axis_key": "column_name_or_null", "y_axis_key": "column_name_or_null"}}'),
-            ("human", "SQL: {sql}\nQuestion: {question}")
-        ])
-        viz_chain = viz_prompt | llm | JsonOutputParser()
-        viz_config = viz_chain.invoke({"sql": sanitized_sql, "question": payload.natural_language_query})
-        
         actual_cols = list(df_result.columns)
-        x_key = viz_config.get("x_axis_key")
-        y_key = viz_config.get("y_axis_key")
-        
-        if x_key not in actual_cols:
-            x_key = actual_cols[0] if actual_cols else None
-        if y_key not in actual_cols:
-            y_key = actual_cols[1] if len(actual_cols) > 1 else (actual_cols[0] if actual_cols else None)
-            
+        x_key = actual_cols[0] if actual_cols else None
+        y_key = None
+        if len(actual_cols) > 1:
+            # Find the first numeric column for y-axis
+            for col in actual_cols[1:]:
+                if pd.api.types.is_numeric_dtype(df_result[col]):
+                    y_key = col
+                    break
+            if not y_key:
+                y_key = actual_cols[1]
+                
         viz_cfg = {
-            "recommended": viz_config.get("visualization_recommended", False),
-            "type": viz_config.get("chart_type", "none"),
+            "recommended": len(actual_cols) >= 2,
+            "type": "bar" if len(actual_cols) >= 2 else "none",
             "x_axis_key": x_key,
             "y_axis_key": y_key
         }

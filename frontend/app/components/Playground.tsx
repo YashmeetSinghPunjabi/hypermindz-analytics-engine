@@ -8,7 +8,7 @@ import {
 import {
   Database, AlertCircle, Table, FileSpreadsheet,
   RefreshCw, Sparkles, Play, History, ChevronRight, BarChart3, HelpCircle,
-  Mic, MicOff, Download, Code, Terminal, Upload
+  Mic, MicOff, Download, Code, Terminal, Upload, Zap
 } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
@@ -47,7 +47,7 @@ interface PlaygroundProps {
   nlQuery: string;
   setNlQuery: (query: string) => void;
   dynamicSuggestions: any[];
-  handleSendQuery: (query: string) => void;
+  handleSendQuery: (query: string, mode?: string) => void;
   handleClearHistory: () => void;
   queryHistory: any[];
   files: any[];
@@ -63,6 +63,8 @@ interface PlaygroundProps {
   isUploading?: boolean;
   onCancelQuery?: () => void;
   onReloadHistoryItem?: (hist: any) => void;
+  selectedAiModel?: string;
+  setSelectedAiModel?: (model: string) => void;
 }
 
 export default function Playground({
@@ -88,7 +90,9 @@ export default function Playground({
   handleFileUpload,
   isUploading,
   onCancelQuery,
-  onReloadHistoryItem
+  onReloadHistoryItem,
+  selectedAiModel,
+  setSelectedAiModel
 }: PlaygroundProps) {
   const [isListening, setIsListening] = React.useState(false);
   const [queryMode, setQueryMode] = React.useState<'nl' | 'sql'>('nl');
@@ -182,11 +186,11 @@ export default function Playground({
       y_axis_key: Object.keys(msg.data[0]).find(k => typeof msg.data[0][k] === 'number') || Object.keys(msg.data[0])[0]
     };
 
-    const recommendedType = config.type || 'bar';
+    const recommendedType = (!config.type || config.type === 'none') ? 'bar' : config.type;
     const activeChartType = selectedChartOverride[msgIndex] || recommendedType;
 
-    const xKey = config.x_axis_key || "";
-    const yKey = config.y_axis_key || "";
+    const xKey = config.x_axis_key || Object.keys(msg.data[0])[0] || "";
+    const yKey = config.y_axis_key || Object.keys(msg.data[0]).find(k => typeof msg.data[0][k] === 'number') || Object.keys(msg.data[0])[0] || "";
 
     if (activeChartType === 'none' || !xKey || !yKey) return null;
 
@@ -237,8 +241,8 @@ export default function Playground({
           </div>
         </div>
 
-        <div className="w-full h-64 pt-2 font-medium text-[10px] text-slate-500">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full h-64 pt-2 font-medium text-[10px] text-slate-500" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer width="99%" height={240}>
             {activeChartType === 'bar' ? (
               <RechartsBarChart data={formattedData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <XAxis dataKey={actualXKey} stroke="#94a3b8" tickLine={false} />
@@ -340,6 +344,26 @@ export default function Playground({
                 <RefreshCw className="h-3 w-3" />
                 Reset Chat Context
               </button>
+            )}
+
+            {/* AI Model Toggle */}
+            {setSelectedAiModel && selectedAiModel && (
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAiModel('gemini-2.5-flash')}
+                  className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all flex items-center gap-1 ${selectedAiModel === 'gemini-2.5-flash' ? 'bg-white text-indigo-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  <Sparkles className="h-3 w-3" /> Flash
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAiModel('gemini-2.5-flash-lite')}
+                  className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all flex items-center gap-1 ${selectedAiModel === 'gemini-2.5-flash-lite' ? 'bg-white text-indigo-600 shadow-sm border border-slate-250/20' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  <Zap className="h-3 w-3" /> Flash-Lite
+                </button>
+              </div>
             )}
 
             {/* Theme Toggle (Playground Header) */}
@@ -502,7 +526,7 @@ export default function Playground({
                         {dynamicSuggestions.map((q, qIdx) => (
                           <button
                             key={qIdx}
-                            onClick={() => handleSendQuery(q.text)}
+                            onClick={() => handleSendQuery(q.text, 'nl')}
                             disabled={isQuerying}
                             className="bg-white hover:bg-indigo-50/15 border border-slate-200 hover:border-indigo-500/50 rounded-2xl p-4 text-left shadow-sm transition-all hover:shadow-md flex flex-col justify-between h-28 group relative overflow-hidden"
                           >
@@ -583,7 +607,7 @@ export default function Playground({
                                 type="button"
                                 onClick={() => setActiveMessageTab({ ...activeMessageTab, [index]: 'table' })}
                                 className={`text-[10px] font-bold px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
-                                  (activeMessageTab[index] || ((msg.visualization_config?.recommended && msg.visualization_config?.type !== 'none' && isChartable(msg.data)) ? 'chart' : 'table')) === 'table'
+                                  (activeMessageTab[index] || (msg.visualization_config?.recommended && msg.visualization_config?.type !== 'none' && isChartable(msg.data) ? 'chart' : 'table')) === 'table'
                                     ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
                                     : 'text-slate-500 hover:text-slate-800'
                                 }`}
@@ -596,7 +620,7 @@ export default function Playground({
                                   type="button"
                                   onClick={() => setActiveMessageTab({ ...activeMessageTab, [index]: 'chart' })}
                                   className={`text-[10px] font-bold px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
-                                    (activeMessageTab[index] || ((msg.visualization_config?.recommended && msg.visualization_config?.type !== 'none' && isChartable(msg.data)) ? 'chart' : 'table')) === 'chart'
+                                    (activeMessageTab[index] || (msg.visualization_config?.recommended && msg.visualization_config?.type !== 'none' && isChartable(msg.data) ? 'chart' : 'table')) === 'chart'
                                       ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
                                       : 'text-slate-500 hover:text-slate-800'
                                   }`}
@@ -745,7 +769,7 @@ export default function Playground({
                   {dynamicSuggestions.map((q, qIdx) => (
                     <button
                       key={qIdx}
-                      onClick={() => handleSendQuery(q.text)}
+                      onClick={() => handleSendQuery(q.text, 'nl')}
                       disabled={isQuerying}
                       className="bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-100 text-[10px] font-bold text-indigo-600 px-2.5 py-1 rounded-full transition-all"
                     >
@@ -759,7 +783,7 @@ export default function Playground({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSendQuery(nlQuery);
+                handleSendQuery(nlQuery, queryMode);
               }}
               className="flex gap-3 items-center"
             >
